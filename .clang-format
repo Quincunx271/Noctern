@@ -1,0 +1,13 @@
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortIfStatementsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: false
+AlwaysBreakTemplateDeclarations: true
+BasedOnStyle: WebKit
+BreakBeforeBraces: Attach
+ColumnLimit: 100
+IndentWidth: 4
+Cpp11BracedListStyle: true
+NamespaceIndentation: All
+Standard: Cpp11
+PenaltyReturnTypeOnItsOwnLine: 50
+PenaltyBreakBeforeFirstCallParameter: 50
