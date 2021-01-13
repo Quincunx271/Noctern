@@ -56,7 +56,9 @@ namespace noctern::ast {
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<lambda_expr> const& rhs) {
-        return lhs << debug_print(*rhs.value.value);
+        fmt::print(lhs, "lambda({} -> {})", debug_fmt_join(rhs.value.params, ", "),
+            debug_print(*rhs.value.body));
+        return lhs;
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<expr> const& rhs) {

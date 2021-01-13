@@ -66,6 +66,9 @@ target_link_libraries(nocternc PRIVATE Noctern::Noctern)
 add_executable(noctern.lexer lexer.main.cpp)
 target_link_libraries(noctern.lexer PRIVATE Noctern::Noctern)
 
+add_executable(noctern.parser parser.main.cpp)
+target_link_libraries(noctern.parser PRIVATE Noctern::Noctern)
+
 # Set up tests
 include(write_if_diff)
 write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[

@@ -21,7 +21,14 @@ namespace noctern {
         rblock, // }
         lindex, // .(
         rindex = rcall, // )
-        typed_as, // :: (haskell's syntax for now)
+        lgroup = lcall, // (
+        rgroup = rcall, // )
+        typed_as = lindex + 1, // :: (haskell's syntax for now)
+        lattr_list = lblock, // {
+        rattr_list = rblock, // }
+        bind = typed_as + 1, // =
+        list_sep, // ,
+        stmt_term, // ;
 
         member, // .
         compose, // ..

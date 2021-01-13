@@ -55,10 +55,11 @@ namespace noctern::ast {
         std::vector<expr> args;
     };
 
-    struct fn_decl;
+    struct expr;
 
     struct lambda_expr {
-        std::unique_ptr<fn_decl> value;
+        std::vector<identifier> params;
+        std::unique_ptr<expr> body;
     };
 
     using expr_type = std::variant<int_lit_expr, real_lit_expr, string_lit_expr, fn_call_expr,

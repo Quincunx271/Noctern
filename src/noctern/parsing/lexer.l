@@ -93,6 +93,12 @@ struct noctern_lexer_extra {
 
 ::              return yyextra.match_literal(token_type::typed_as, yyleng);
 
+,               return yyextra.match_literal(token_type::list_sep, yyleng);
+
+;               return yyextra.match_literal(token_type::stmt_term, yyleng);
+
+=               return yyextra.match_literal(token_type::bind, yyleng);
+
 \.              return yyextra.match_literal(token_type::member, yyleng);
 
 \.\.            return yyextra.match_literal(token_type::compose, yyleng);
