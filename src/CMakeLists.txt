@@ -57,6 +57,7 @@ target_compile_features(Noctern
 target_link_libraries(Noctern
   PUBLIC
     CONAN_PKG::frozen
+    CONAN_PKG::fmt
 )
 
 add_executable(nocternc nocternc.main.cpp)
@@ -71,12 +72,14 @@ write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
   #define CATCH_CONFIG_MAIN
   #include <catch2/catch.hpp>
 ]])
+add_library(catch_main OBJECT ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
+target_link_libraries(catch_main PUBLIC CONAN_PKG::catch2)
 
-add_executable(test.Noctern ${test_sources} ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
+add_executable(test.Noctern ${test_sources})
 target_link_libraries(test.Noctern
   PRIVATE
     Noctern::Noctern
-    CONAN_PKG::catch2
+    catch_main
 )
 target_compile_options(test.Noctern
   PRIVATE

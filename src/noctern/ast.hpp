@@ -5,6 +5,8 @@
 #include <variant>
 #include <vector>
 
+#include <noctern/debug_print.hpp>
+
 namespace noctern::ast {
     struct identifier {
         std::string value;
@@ -92,4 +94,21 @@ namespace noctern::ast {
     struct file {
         std::vector<declaration> value;
     };
+
+    std::ostream& operator<<(std::ostream& lhs, debug_print<identifier> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<basic_type> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<fn_type> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<eval_type> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<type> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<int_lit_expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<real_lit_expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<string_lit_expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<fn_call_expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<lambda_expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<expr> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<fn_decl> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<attribute_decl> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<struct_decl> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<declaration> const& rhs);
+    std::ostream& operator<<(std::ostream& lhs, debug_print<file> const& rhs);
 }
