@@ -7,7 +7,7 @@
 
 #include <catch2/catch.hpp>
 
-#include <noctern/debug_print.hpp>
+#include <noctern/utils/debug_print.hpp>
 
 namespace Catch {
     template <typename T>

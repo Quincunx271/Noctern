@@ -6,8 +6,7 @@
 
 using noctern::token_type;
 
-struct noctern_lexer_extra
-{
+struct noctern_lexer_extra {
     std::size_t current_position = 0;
     std::size_t token_length = 0;
 

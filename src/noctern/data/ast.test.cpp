@@ -1,7 +1,7 @@
-#include <noctern/ast.hpp>
+#include <noctern/data/ast.hpp>
 
-#include <noctern/debug_print.hpp>
-#include <noctern/debug_print.test.hpp>
+#include <noctern/utils/debug_print.hpp>
+#include <noctern/utils/debug_print.test.hpp>
 
 #include <cstddef>
 #include <iterator>

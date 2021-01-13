@@ -4,7 +4,7 @@
 #include <tuple>
 #include <variant>
 
-#include <noctern/debug_print.hpp>
+#include <noctern/utils/debug_print.hpp>
 
 namespace noctern {
     enum class token_type {

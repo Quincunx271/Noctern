@@ -5,7 +5,7 @@
 #include <variant>
 #include <vector>
 
-#include <noctern/debug_print.hpp>
+#include <noctern/utils/debug_print.hpp>
 
 namespace noctern::ast {
     struct identifier {
