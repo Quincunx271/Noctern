@@ -1,3 +1,5 @@
+find_package(FLEX 2.6.4 REQUIRED)
+
 # Set up warnings / similar flags
 set(werr ${NOCTERN_WARNINGS_AS_ERRORS})
 set(compile_options)
@@ -33,11 +35,16 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
 endif()
 
 # Set up targets
-file(GLOB_RECURSE sources CONFIGURE_DEPENDS "*.cpp")
-file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "*.test.cpp")
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS "noctern/*.cpp" "noctern/*.hpp")
+file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "noctern/*.test.cpp")
 list(REMOVE_ITEM sources ${test_sources})
 
-add_library(Noctern ${sources})
+flex_target(noctern.lex noctern/parsing/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
+
+add_library(Noctern
+  ${sources}
+  ${FLEX_noctern.lex_OUTPUTS}
+)
 add_library(Noctern::Noctern ALIAS Noctern)
 target_include_directories(Noctern
   PUBLIC
@@ -47,17 +54,23 @@ target_compile_features(Noctern
   PUBLIC
     cxx_std_20
 )
+target_link_libraries(Noctern
+  PUBLIC
+    CONAN_PKG::frozen
+)
 
 add_executable(nocternc nocternc.main.cpp)
 target_link_libraries(nocternc PRIVATE Noctern::Noctern)
 
+add_executable(noctern.lexer lexer.main.cpp)
+target_link_libraries(noctern.lexer PRIVATE Noctern::Noctern)
+
 # Set up tests
-if(NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
-  file(WRITE ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
-    #define CATCH_CONFIG_MAIN
-    #include <catch2/catch.hpp>
-  ]])
-endif()
+include(write_if_diff)
+write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
+  #define CATCH_CONFIG_MAIN
+  #include <catch2/catch.hpp>
+]])
 
 add_executable(test.Noctern ${test_sources} ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
 target_link_libraries(test.Noctern

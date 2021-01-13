@@ -1,0 +1,11 @@
+function(write_if_diff NAME CONTENT)
+  if(NOT EXISTS ${NAME})
+    file(WRITE ${NAME} "${CONTENT}")
+  else()
+    file(READ ${NAME} contents)
+
+    if(NOT contents STREQUAL CONTENT)
+      file(WRITE ${NAME} "${CONTENT}")
+    endif()
+  endif()
+endfunction()
