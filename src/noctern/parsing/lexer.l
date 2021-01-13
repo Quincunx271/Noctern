@@ -4,6 +4,8 @@
 #include <limits>
 #include <noctern/parsing/lexer.hpp>
 
+using noctern::token_type;
+
 struct noctern_lexer_extra
 {
     std::size_t current_position = 0;
@@ -16,7 +18,7 @@ struct noctern_lexer_extra
     std::size_t variable_reference_depth = 0;
     std::size_t make_reference_depth = 0;
 
-    noctern::token_type type = noctern::token_type::unknown;
+    token_type type = token_type::unknown;
 
     int start_condition = 0;
 
@@ -49,13 +51,17 @@ struct noctern_lexer_extra
         token_length = 0;
     }
 
-    void match_literal(std::size_t length) {
+    int match_literal(token_type type, std::size_t length) {
+        this->type = type;
         increment_position(length);
         token_length = 0;
+        return 1;
     }
 
-    void match_content(std::size_t length, std::size_t content_start, std::size_t content_end) {
+    int match_content(token_type type, std::size_t length, std::size_t content_start, std::size_t content_end) {
+        this->type = type;
         update_position(length, content_start, content_end - content_start);
+        return 1;
     }
 };
 %}
@@ -70,270 +76,97 @@ struct noctern_lexer_extra
 
 %x STRING
 %%
-\n {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::newline;
-    return 1;
-}
+\n              return yyextra.match_literal(token_type::newline, yyleng);
 
-\( {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::lcall;
-    return 1;
-}
+\(              return yyextra.match_literal(token_type::lcall, yyleng);
 
-\) {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::rcall;
-    return 1;
-}
+\)              return yyextra.match_literal(token_type::rcall, yyleng);
 
-\[ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::ltcall;
-    return 1;
-}
+\[              return yyextra.match_literal(token_type::ltcall, yyleng);
 
-\] {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::rtcall;
-    return 1;
-}
+\]              return yyextra.match_literal(token_type::rtcall, yyleng);
 
-\{ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::lblock;
-    return 1;
-}
+\{              return yyextra.match_literal(token_type::lblock, yyleng);
 
-\} {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::rblock;
-    return 1;
-}
+\}              return yyextra.match_literal(token_type::rblock, yyleng);
 
-\.\( {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::lindex;
-    return 1;
-}
+\.\(            return yyextra.match_literal(token_type::lindex, yyleng);
 
-:: {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::typed_as;
-    return 1;
-}
+::              return yyextra.match_literal(token_type::typed_as, yyleng);
 
-\. {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::member;
-    return 1;
-}
+\.              return yyextra.match_literal(token_type::member, yyleng);
 
-\.\. {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::compose;
-    return 1;
-}
+\.\.            return yyextra.match_literal(token_type::compose, yyleng);
 
-\$ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::curry;
-    return 1;
-}
+\$              return yyextra.match_literal(token_type::curry, yyleng);
 
--> {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::farrow;
-    return 1;
-}
+->              return yyextra.match_literal(token_type::farrow, yyleng);
 
-\\ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::lambda;
-    return 1;
-}
+\\              return yyextra.match_literal(token_type::lambda, yyleng);
 
-\+ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::plus;
-    return 1;
-}
+\+              return yyextra.match_literal(token_type::plus, yyleng);
 
-- {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::minus;
-    return 1;
-}
+-               return yyextra.match_literal(token_type::minus, yyleng);
 
-\* {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::times;
-    return 1;
-}
+\*              return yyextra.match_literal(token_type::times, yyleng);
 
-\/ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::divide;
-    return 1;
-}
+\/              return yyextra.match_literal(token_type::divide, yyleng);
 
-mod {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::modulo;
-    return 1;
-}
+mod             return yyextra.match_literal(token_type::modulo, yyleng);
 
-rem {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::remainder;
-    return 1;
-}
+rem             return yyextra.match_literal(token_type::remainder, yyleng);
 
-== {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::eq;
-    return 1;
-}
+==              return yyextra.match_literal(token_type::eq, yyleng);
 
-!= {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::ne;
-    return 1;
-}
+!=              return yyextra.match_literal(token_type::ne, yyleng);
 
-\< {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::lt;
-    return 1;
-}
+\<              return yyextra.match_literal(token_type::lt, yyleng);
 
-\<= {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::le;
-    return 1;
-}
+\<=             return yyextra.match_literal(token_type::le, yyleng);
 
-> {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::gt;
-    return 1;
-}
+>               return yyextra.match_literal(token_type::gt, yyleng);
 
->= {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::ge;
-    return 1;
-}
+>=              return yyextra.match_literal(token_type::ge, yyleng);
 
-\<=> {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::cmp;
-    return 1;
-}
+\<=>            return yyextra.match_literal(token_type::cmp, yyleng);
 
-and {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::l_and;
-    return 1;
-}
+and             return yyextra.match_literal(token_type::l_and, yyleng);
 
-or {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::l_or;
-    return 1;
-}
+or              return yyextra.match_literal(token_type::l_or, yyleng);
 
-not {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::l_not;
-    return 1;
-}
+not             return yyextra.match_literal(token_type::l_not, yyleng);
 
-b& {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::b_and;
-    return 1;
-}
+b&              return yyextra.match_literal(token_type::b_and, yyleng);
 
-b\| {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::b_or;
-    return 1;
-}
+b\|             return yyextra.match_literal(token_type::b_or, yyleng);
 
-b~ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::b_not;
-    return 1;
-}
+b~              return yyextra.match_literal(token_type::b_not, yyleng);
 
-b\^ {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::b_xor;
-    return 1;
-}
+b\^             return yyextra.match_literal(token_type::b_xor, yyleng);
 
-def {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::def_fn;
-    return 1;
-}
+def             return yyextra.match_literal(token_type::def_fn, yyleng);
 
-val {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::def_val;
-    return 1;
-}
+val             return yyextra.match_literal(token_type::def_val, yyleng);
 
-struct {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::def_struct;
-    return 1;
-}
+struct          return yyextra.match_literal(token_type::def_struct, yyleng);
 
-typealias {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::def_typealias;
-    return 1;
-}
+typealias       return yyextra.match_literal(token_type::def_typealias, yyleng);
 
-import {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::import_;
-    return 1;
-}
+import          return yyextra.match_literal(token_type::import_, yyleng);
 
-return {
-    yyextra.match_literal(yyleng);
-    yyextra.type = noctern::token_type::return_;
-    return 1;
-}
+return          return yyextra.match_literal(token_type::return_, yyleng);
 
-[a-zA-Z_][A-Za-z0-9_]* {
-    yyextra.match_content(yyleng, 0, yyleng);
-    yyextra.type = noctern::token_type::identifier;
-    return 1;
-}
+[a-zA-Z_][A-Za-z0-9_]*      return yyextra.match_content(token_type::identifier, yyleng, 0, yyleng);
 
-    /* String, Integer, Real */
-[0-9]+\.[0-9]*|\.[0-9]+ {
-    yyextra.match_content(yyleng, 0, yyleng);
-    yyextra.type = noctern::token_type::real;
-    return 1;
-}
+[0-9]+\.[0-9]*|\.[0-9]+     return yyextra.match_content(token_type::real, yyleng, 0, yyleng);
 
-[0-9]+ {
-    yyextra.match_content(yyleng, 0, yyleng);
-    yyextra.type = noctern::token_type::integer;
-    return 1;
-}
+[0-9]+                      return yyextra.match_content(token_type::integer, yyleng, 0, yyleng);
 
     /* All the string-parsing stuff */
 \" {
     yyextra.increment_position(yyleng);
     yyextra.current_position += yyleng;
-    yyextra.type = noctern::token_type::string;
+    yyextra.type = token_type::string;
     BEGIN(STRING);
 }
 
@@ -349,40 +182,28 @@ return {
 }
 
 <STRING><<EOF>> {
-    yyextra.type = noctern::token_type::unterminated_string;
+    yyextra.type = token_type::unterminated_string;
     BEGIN(INITIAL);
     return 1;
 }
 
 <STRING>. {
     yyextra.extend_full_match(yyleng);
-    yyextra.type = noctern::token_type::unknown;
+    yyextra.type = token_type::unknown;
     BEGIN(INITIAL);
     return 1;
 }
     /* string stuff end */
 
-[ \t\r]+ {
-    yyextra.increment_position(yyleng);
-    yyextra.type = noctern::token_type::space;
-    return 1;
-}
+[ \t\r]+    return yyextra.match_content(token_type::space, yyleng, 0, yyleng);
 
-\/\/[^\n]* {
-    yyextra.match_content(yyleng, 2, yyleng - 1);
-    yyextra.type = noctern::token_type::line_comment;
-    return 1;
-}
+\/\/[^\n]*  return yyextra.match_content(token_type::line_comment, yyleng, 2, yyleng - 1);
 
-<INITIAL>. {
-    yyextra.increment_position(yyleng);
-    yyextra.type = noctern::token_type::unknown;
-    return 1;
-}
+<INITIAL>.  return yyextra.match_content(token_type::unknown, yyleng, 0, yyleng);
 
 <<EOF>> {
     yyextra.increment_position(0);
-    yyextra.type = noctern::token_type::end_of_file;
+    yyextra.type = token_type::end_of_file;
     return 0;
 }
 %%
