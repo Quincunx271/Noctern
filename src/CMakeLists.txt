@@ -60,14 +60,17 @@ target_link_libraries(Noctern
     CONAN_PKG::fmt
 )
 
-add_executable(nocternc nocternc.main.cpp)
-target_link_libraries(nocternc PRIVATE Noctern::Noctern)
+file(GLOB_RECURSE main_sources CONFIGURE_DEPENDS "*.main.cpp")
 
-add_executable(noctern.lexer lexer.main.cpp)
-target_link_libraries(noctern.lexer PRIVATE Noctern::Noctern)
+foreach(main IN LISTS main_sources)
+  get_filename_component(main_name ${main} NAME_WE)
+  if(NOT main_name MATCHES "^noctern")
+    set(main_name noctern.${main_name})
+  endif()
 
-add_executable(noctern.parser parser.main.cpp)
-target_link_libraries(noctern.parser PRIVATE Noctern::Noctern)
+  add_executable(${main_name} ${main})
+  target_link_libraries(${main_name} PRIVATE Noctern::Noctern)
+endforeach()
 
 # Set up tests
 include(write_if_diff)
