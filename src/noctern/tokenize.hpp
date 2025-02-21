@@ -43,6 +43,9 @@ namespace noctern {
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
         NOCTERN_X_TOKEN(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
+
+        // A sentinel which is "empty", but doesn't need to be handled (can't ever result).
+        empty_invalid,
     };
 
     // Converts a `token` to string.
@@ -215,11 +218,65 @@ namespace noctern {
         });
     }
 
+    class token_without_data {
+    public:
+        template <token token>
+            requires(token == token::empty_invalid || !has_data(token))
+        explicit constexpr token_without_data(val_t<token>)
+            : value(token) {
+        }
+
+        token value;
+    };
+
+    class token_with_data {
+    public:
+        template <token token>
+            requires(has_data(token))
+        explicit constexpr token_with_data(val_t<token>)
+            : value(token) {
+        }
+
+        token value;
+    };
+
     // The result of calling `tokenize_all`.
     //
     // Holds references to the input string.
     class tokens {
     public:
+        class builder {
+            friend class tokens;
+
+        public:
+            void add_token(token_with_data token, std::string_view string_data) {
+                tokens_.push_back(token.value);
+                string_data_.push_back(string_data);
+            }
+
+            void add_token(token_without_data token) {
+                tokens_.push_back(token.value);
+            }
+
+            template <token V, typename... Args>
+            void add_token(val_t<V> token, Args... args) {
+                if constexpr (std::constructible_from<token_with_data, val_t<V>>) {
+                    add_token(token_with_data(token), args...);
+                } else {
+                    add_token(token_without_data(token), args...);
+                }
+            }
+
+        private:
+            std::vector<token> tokens_;
+            std::vector<std::string_view> string_data_;
+        };
+
+        explicit tokens(builder builder)
+            : tokens_(std::move(builder.tokens_))
+            , string_data_(std::move(builder.string_data_)) {
+        }
+
         // Runs a linear scan through the tokens, calling `fn` for each.
         //
         // `fn` is called like `fn(noctern::token{}, std::string_view{});`.
@@ -248,7 +305,7 @@ namespace noctern {
         }
 
     private:
-        friend tokens tokenize_all(std::string_view input);
+        friend class builder;
 
         // The parser only needs to work directly on the tokens. We organize memory to encourage
         // this.
@@ -261,8 +318,6 @@ namespace noctern {
         std::vector<token> tokens_;
         std::vector<std::string_view> string_data_;
     };
-
-    std::pair<token, std::string_view> tokenize_one(std::string_view input);
 
     tokens tokenize_all(std::string_view input);
 }

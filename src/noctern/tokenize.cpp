@@ -101,7 +101,7 @@ namespace noctern {
             }
 
         public:
-            std::optional<token> find_keyword(std::string_view identifier) const {
+            std::optional<token_without_data> find_keyword(std::string_view identifier) const {
                 uint8_t hash_value = hash(identifier);
                 entry entry = table_[hash_value];
                 if (entry.value == identifier) {
@@ -112,7 +112,7 @@ namespace noctern {
 
         private:
             struct entry {
-                noctern::token token = noctern::token::invalid;
+                token_without_data token {val<noctern::token::empty_invalid>};
                 std::string_view value;
             };
 
@@ -124,9 +124,9 @@ namespace noctern {
                         == token::ident) {
                         uint8_t hash_value = hash(Data::value);
                         entry& entry = result[hash_value];
-                        assert(entry.token == token::invalid);
+                        assert(entry.token.value == token::empty_invalid);
                         entry.value = Data::value;
-                        entry.token = token;
+                        entry.token = token_without_data(val<token>);
                     }
                 });
 
@@ -141,31 +141,29 @@ namespace noctern {
         //
         // We mutate the `input` in-out param to indicate that we've consumed input.
         //
-        // `tokenize_at` could return a different token type than it is called with, e.g. if it's
-        // actually an invalid token.
+        // We add the token (and string value if relevant) to the `builder` parameter.
 
         template <token token>
             requires is_empty_data<token_data_t<token>>
-        noctern::token tokenize_at(
-            val_t<token>, std::string_view& input, std::vector<std::string_view>& string_data) {
+        void tokenize_at(val_t<token>, std::string_view& input, tokens::builder& builder) {
             // Possible optimization: it may be faster to generate a table rather than generate N
             // overloads.
 
             constexpr auto value = token_data_t<token>::value;
             if constexpr (value.size() == 1) {
                 input.remove_prefix(1);
-                return token;
+                builder.add_token(val<token>);
             } else {
                 std::string_view data = value;
 
                 if (input.size() < data.size()) {
-                    string_data.push_back(input);
+                    builder.add_token(val<token::invalid>, input);
                     input.remove_prefix(input.size());
-                    return token::invalid;
+                    return;
                 }
 
                 input.remove_prefix(data.size());
-                return token;
+                builder.add_token(val<token>);
             }
         }
 
@@ -185,35 +183,31 @@ namespace noctern {
             return result;
         }
 
-        token tokenize_at(val_t<token::invalid>, std::string_view& input,
-            std::vector<std::string_view>& string_data) {
-            string_data.push_back(parse_while(input, [](char c) {
+        void tokenize_at(
+            val_t<token::invalid> token, std::string_view& input, tokens::builder& builder) {
+            builder.add_token(token, parse_while(input, [](char c) {
                 return token_for_leading_char[static_cast<unsigned char>(c)] == token::invalid;
             }));
-
-            return token::invalid;
         }
 
-        token tokenize_at(val_t<token::space>, std::string_view& input,
-            std::vector<std::string_view>& string_data) {
-            string_data.push_back(parse_while(input, [](char c) {
+        void tokenize_at(
+            val_t<token::space> token, std::string_view& input, tokens::builder& builder) {
+            builder.add_token(token, parse_while(input, [](char c) {
                 return token_for_leading_char[static_cast<unsigned char>(c)] == token::space;
             }));
-
-            return token::space;
         }
 
-        token tokenize_at(val_t<token::ident>, std::string_view& input,
-            std::vector<std::string_view>& string_data) {
+        void tokenize_at(val_t<token::ident>, std::string_view& input, tokens::builder& builder) {
             std::string_view ident = parse_while(input, [](char c) {
                 return ('0' <= c && c <= '9') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z')
                     || c == '_';
             });
-            if (std::optional<token> keyword = keywords.find_keyword(ident)) {
-                return *keyword;
+            if (std::optional<token_without_data> keyword = keywords.find_keyword(ident)) {
+                builder.add_token(*keyword);
+                return;
             }
-            string_data.push_back(ident);
-            return token::ident;
+
+            builder.add_token(val<token::ident>, ident);
         }
 
         // Tokenizes r'\.[0-9]*'.
@@ -229,43 +223,38 @@ namespace noctern {
             return old_input.substr(0, len + 1);
         }
 
-        token tokenize_at(val_t<token::real_lit>, std::string_view& input,
-            std::vector<std::string_view>& string_data) {
-            string_data.push_back(tokenize_real_part_lit(input));
-
-            return token::real_lit;
+        void tokenize_at(
+            val_t<token::real_lit> token, std::string_view& input, tokens::builder& builder) {
+            builder.add_token(token, tokenize_real_part_lit(input));
         }
 
-        token tokenize_at(val_t<token::int_lit>, std::string_view& input,
-            std::vector<std::string_view>& string_data) {
+        void tokenize_at(val_t<token::int_lit>, std::string_view& input, tokens::builder& builder) {
             std::string_view int_lit
                 = parse_while(input, [](char c) { return '0' <= c && c <= '9'; });
-            ;
+
             if (!input.empty()
                 // We might actually need to combine this with a real number literal.
                 && token_for_leading_char[static_cast<unsigned char>(input[0])]
                     == token::real_lit) {
                 std::string_view real_lit = tokenize_real_part_lit(input);
-                string_data.emplace_back(int_lit.data(), &real_lit.back() + 1);
-                return token::real_lit;
+                builder.add_token(
+                    val<token::real_lit>, std::string_view(int_lit.data(), &real_lit.back() + 1));
             } else {
-                string_data.push_back(int_lit);
-                return token::int_lit;
+                builder.add_token(val<token::int_lit>, int_lit);
             }
         }
     }
 
     tokens tokenize_all(std::string_view input) {
-        tokens result;
+        tokens::builder builder;
 
         while (!input.empty()) {
             auto next = static_cast<unsigned char>(input[0]);
-            result.tokens_.push_back(token_switch(
-                token_for_leading_char[next], [&]<token lex_next>(val_t<lex_next> val) {
-                    return noctern::tokenize_at(val, input, result.string_data_);
-                }));
+            token_switch(token_for_leading_char[next], [&]<token lex_next>(val_t<lex_next> val) {
+                noctern::tokenize_at(val, input, builder);
+            });
         }
 
-        return result;
+        return tokens(std::move(builder));
     }
 }
