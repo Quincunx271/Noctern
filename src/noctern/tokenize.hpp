@@ -10,7 +10,9 @@
 #include <vector>
 
 namespace noctern {
+    // The token identifier.
     enum class token : uint8_t {
+    // X-macro for the meaningful enumeration values.
 #define NOCTERN_X_TOKEN(X)                                                                         \
     X(invalid)                                                                                     \
     X(space)                                                                                       \
@@ -43,6 +45,8 @@ namespace noctern {
 #undef NOCTERN_MAKE_ENUM_VALUE
     };
 
+    // Converts a `token` to string.
+    // Okay to call via ADL.
     constexpr inline std::string_view stringify(token token) {
         switch (token) {
 #define NOCTERN_TOKEN_STR(name)                                                                    \
@@ -53,6 +57,7 @@ namespace noctern {
         assert(false);
     }
 
+    // Allows string literals as template parameters.
     template <size_t N>
     class fixed_string {
     public:
@@ -66,6 +71,7 @@ namespace noctern {
             return std::string_view(_chars, N);
         }
 
+        // Implementation detail; do not access.
         char _chars[N + 1] = {}; // +1 for null terminator
     };
 
@@ -83,6 +89,7 @@ namespace noctern {
     template <fixed_string S>
     inline constexpr auto val<S> = val_t<S> {};
 
+    // Passes all the `token` enumeration values as arguments to `fn`.
     template <typename Fn>
     constexpr decltype(auto) all_tokens(Fn&& fn) {
         using enum token;
@@ -95,6 +102,17 @@ namespace noctern {
         );
     }
 
+    // Lifts a switch on `token` enumeration values into template parameters.
+    //
+    // In other words:
+    //
+    // ```
+    // switch (token) {
+    //   using enum noctern::token;
+    // case enum_value_1: return fn(val<enum_value_1>);
+    // // ...
+    // }
+    // ```
     template <typename Fn>
     constexpr decltype(auto) token_switch(token token, Fn&& fn) {
         switch (token) {
@@ -108,6 +126,13 @@ namespace noctern {
 
 #undef NOCTERN_X_TOKEN
 
+    ///////////////
+    // "Data" definitions.
+    //
+    // This is the mechanism by which we associate data with a token.
+    ///
+
+    // Indicates that the associated data for the token is known at compile time.
     template <fixed_string S>
     struct empty_data {
         static constexpr std::string_view value = S;
@@ -116,8 +141,10 @@ namespace noctern {
     template <typename T>
     inline constexpr bool is_empty_data = requires(T t) { []<auto V>(empty_data<V>) { }(t); };
 
+    // Indicates that the associated data for the token is a runtime string.
     struct string_data { };
 
+    // Specialized for each `token` enumeration.
     template <token token>
     inline constexpr auto token_data = nullptr;
 
@@ -181,14 +208,21 @@ namespace noctern {
     template <>
     inline constexpr auto token_data<token::return_> = empty_data<"return"> {};
 
+    // Whether there is runtime data associated with this `token` type.
     constexpr bool has_data(token token) {
         return token_switch(token, []<noctern::token token>(val_t<token>) {
             return !is_empty_data<std::remove_cvref_t<decltype(token_data<token>)>>;
         });
     }
 
+    // The result of calling `tokenize_all`.
+    //
+    // Holds references to the input string.
     class tokens {
     public:
+        // Runs a linear scan through the tokens, calling `fn` for each.
+        //
+        // `fn` is called like `fn(noctern::token{}, std::string_view{});`.
         template <typename Fn>
         void walk(Fn&& fn) const {
             size_t string_data_index = 0;
@@ -215,6 +249,14 @@ namespace noctern {
 
     private:
         friend tokens tokenize_all(std::string_view input);
+
+        // The parser only needs to work directly on the tokens. We organize memory to encourage
+        // this.
+        //
+        // Not every token has runtime string data, so we don't store the data if it doesn't matter.
+        // Note that we could actually optimize the data even more, at the expense of compute: we
+        // don't need to store a full `string_view`, but only an offset into the original buffer. We
+        // could retokenize to determine the string value.
 
         std::vector<token> tokens_;
         std::vector<std::string_view> string_data_;
