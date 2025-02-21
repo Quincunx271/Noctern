@@ -4,83 +4,81 @@
 #include <ostream>
 #include <string_view>
 
-#include <frozen/map.h>
-
 namespace noctern {
     namespace {
-        constexpr auto type_stringify = frozen::make_map<token_type, std::string_view>({
-            {token_type::unknown, "unknown"},
-            {token_type::space, "space"},
-            {token_type::newline, "newline"},
-            {token_type::line_comment, "line_comment"},
-            {token_type::lcall, "call_open"},
-            {token_type::rcall, "call_close"},
-            {token_type::ltcall, "tcall_open"},
-            {token_type::rtcall, "tcall_close"},
-            {token_type::lblock, "block_open"},
-            {token_type::rblock, "block_close"},
-            {token_type::lindex, "index_open"},
-            // {token_type::rindex, "index_close"},
-            // {token_type::lgroup, "lparen"},
-            // {token_type::rgroup, "rparen"},
-            {token_type::typed_as, "typed_as"},
-            // {token_type::lattr_list, "attr_list_open"},
-            // {token_type::rattr_list, "attr_list_close"},
-            {token_type::bind, "bind"},
-            {token_type::list_sep, "list_sep"},
-            {token_type::stmt_term, "stmt_term"},
+        constexpr std::string_view type_stringify(token_type type) {
+            switch (type) {
+            case token_type::unknown: return "unknown";
+            case token_type::space: return "space";
+            case token_type::newline: return "newline";
+            case token_type::line_comment: return "line_comment";
+            case token_type::lcall: return "call_open";
+            case token_type::rcall: return "call_close";
+            case token_type::ltcall: return "tcall_open";
+            case token_type::rtcall: return "tcall_close";
+            case token_type::lblock: return "block_open";
+            case token_type::rblock: return "block_close";
+            case token_type::lindex: return "index_open";
+            // case token_type::rindex: return "index_close";
+            // case token_type::lgroup: return "lparen";
+            // case token_type::rgroup: return "rparen";
+            case token_type::typed_as: return "typed_as";
+            // case token_type::lattr_list: return "attr_list_open";
+            // case token_type::rattr_list: return "attr_list_close";
+            case token_type::bind: return "bind";
+            case token_type::list_sep: return "list_sep";
+            case token_type::stmt_term: return "stmt_term";
 
-            {token_type::member, "member"},
-            {token_type::compose, "compose"},
-            {token_type::curry, "curry"},
-            {token_type::farrow, "farrow"},
-            {token_type::lambda, "lambda"},
+            case token_type::member: return "member";
+            case token_type::compose: return "compose";
+            case token_type::curry: return "curry";
+            case token_type::farrow: return "farrow";
+            case token_type::lambda: return "lambda";
 
-            {token_type::plus, "add"},
-            {token_type::minus, "sub"},
-            {token_type::times, "mul"},
-            {token_type::divide, "div"},
-            {token_type::modulo, "mod"},
-            {token_type::remainder, "rem"},
-            {token_type::eq, "eq"},
-            {token_type::ne, "ne"},
-            {token_type::lt, "lt"},
-            {token_type::le, "le"},
-            {token_type::gt, "gt"},
-            {token_type::ge, "ge"},
-            {token_type::cmp, "cmp"},
-            {token_type::l_and, "logical_and"},
-            {token_type::l_or, "logical_or"},
-            {token_type::l_not, "logical_not"},
+            case token_type::plus: return "add";
+            case token_type::minus: return "sub";
+            case token_type::times: return "mul";
+            case token_type::divide: return "div";
+            case token_type::modulo: return "mod";
+            case token_type::remainder: return "rem";
+            case token_type::eq: return "eq";
+            case token_type::ne: return "ne";
+            case token_type::lt: return "lt";
+            case token_type::le: return "le";
+            case token_type::gt: return "gt";
+            case token_type::ge: return "ge";
+            case token_type::cmp: return "cmp";
+            case token_type::l_and: return "logical_and";
+            case token_type::l_or: return "logical_or";
+            case token_type::l_not: return "logical_not";
 
-            {token_type::b_and, "bitwise_and"},
-            {token_type::b_or, "bitwise_or"},
-            {token_type::b_not, "bitwise_not"},
-            {token_type::b_xor, "bitwise_xor"},
+            case token_type::b_and: return "bitwise_and";
+            case token_type::b_or: return "bitwise_or";
+            case token_type::b_not: return "bitwise_not";
+            case token_type::b_xor: return "bitwise_xor";
 
-            {token_type::def_fn, "def_fn"},
-            {token_type::def_val, "def_val"},
-            {token_type::def_struct, "def_struct"},
-            {token_type::def_typealias, "def_typealias"},
+            case token_type::def_fn: return "def_fn";
+            case token_type::def_val: return "def_val";
+            case token_type::def_struct: return "def_struct";
+            case token_type::def_typealias: return "def_typealias";
 
-            {token_type::import_, "import"},
-            {token_type::return_, "return"},
+            case token_type::import_: return "import";
+            case token_type::return_: return "return";
 
-            {token_type::identifier, "identifier"},
-            {token_type::string, "string"},
-            {token_type::integer, "integer"},
-            {token_type::real, "real"},
+            case token_type::identifier: return "identifier";
+            case token_type::string: return "string";
+            case token_type::integer: return "integer";
+            case token_type::real: return "real";
 
-            {token_type::unterminated_string, "unterminated_string"},
-            {token_type::end_of_file, "end_of_file"},
-        });
+            case token_type::unterminated_string: return "unterminated_string";
+            case token_type::end_of_file: return "end_of_file";
+            }
+            assert(false && "Unreachable!");
+        }
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<token_type> const& rhs) {
-        auto const lookup = type_stringify.find(rhs.value);
-        assert(lookup != type_stringify.end());
-
-        return lhs << lookup->second;
+        return lhs << type_stringify(rhs.value);
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<token> const& rhs) {

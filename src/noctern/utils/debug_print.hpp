@@ -1,6 +1,7 @@
 #pragma once
 
 #include <fmt/core.h>
+#include <fmt/ostream.h>
 #include <iosfwd>
 
 namespace noctern {
@@ -25,25 +26,26 @@ namespace noctern {
     };
 }
 
-namespace fmt {
-    template <typename Range, typename Sep>
-    struct formatter<noctern::debug_fmt_join<Range, Sep>> {
-        constexpr auto parse(format_parse_context& ctx) {
-            return ctx.begin();
+template <typename Range, typename Sep>
+struct fmt::formatter<noctern::debug_fmt_join<Range, Sep>> {
+    constexpr auto parse(format_parse_context& ctx) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const noctern::debug_fmt_join<Range, Sep>& x, FormatContext& ctx) {
+        auto pos = ctx.out();
+
+        bool first = true;
+        for (auto const& item : x.range) {
+            if (!first) pos = fmt::format_to(pos, "{}", x.sep);
+            pos = fmt::format_to(pos, "{}", noctern::debug_print(item));
+            first = true;
         }
 
-        template <typename FormatContext>
-        auto format(const noctern::debug_fmt_join<Range, Sep>& x, FormatContext& ctx) {
-            auto pos = ctx.out();
+        return pos;
+    }
+};
 
-            bool first = true;
-            for (auto const& item : x.range) {
-                if (!first) pos = fmt::format_to(pos, "{}", x.sep);
-                pos = fmt::format_to(pos, "{}", noctern::debug_print(item));
-                first = true;
-            }
-
-            return pos;
-        }
-    };
-}
+template <typename T>
+struct fmt::formatter<noctern::debug_print<T>> : fmt::ostream_formatter { };

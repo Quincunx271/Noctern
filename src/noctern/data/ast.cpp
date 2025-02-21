@@ -18,7 +18,8 @@ namespace noctern::ast {
     }
 
     std::ostream& operator<<(std::ostream& lhs, debug_print<fn_type> const& rhs) {
-        fmt::print(lhs, "fn_type({} -> {})", *rhs.value.from, *rhs.value.to);
+        fmt::print(
+            lhs, "fn_type({} -> {})", debug_print(*rhs.value.from), debug_print(*rhs.value.to));
         return lhs;
     }
 

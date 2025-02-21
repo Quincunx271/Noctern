@@ -1,4 +1,7 @@
 find_package(FLEX 2.6.4 REQUIRED)
+find_package(Boost 1.74.0 REQUIRED)
+find_package(fmt 7.1.2 REQUIRED)
+find_package(Catch2 2.13.3 REQUIRED)
 
 # Set up warnings / similar flags
 set(werr ${NOCTERN_WARNINGS_AS_ERRORS})
@@ -56,8 +59,7 @@ target_compile_features(Noctern
 )
 target_link_libraries(Noctern
   PUBLIC
-    CONAN_PKG::frozen
-    CONAN_PKG::fmt
+    fmt::fmt
 )
 
 file(GLOB_RECURSE main_sources CONFIGURE_DEPENDS "*.main.cpp")
@@ -79,7 +81,7 @@ write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
   #include <catch2/catch.hpp>
 ]])
 add_library(catch_main OBJECT ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
-target_link_libraries(catch_main PUBLIC CONAN_PKG::catch2)
+target_link_libraries(catch_main PUBLIC Catch2::Catch2)
 
 add_executable(test.Noctern ${test_sources})
 target_link_libraries(test.Noctern

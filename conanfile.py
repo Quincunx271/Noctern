@@ -5,8 +5,6 @@ class NocternConan(ConanFile):
     requires = (
         'boost/1.74.0',
         'fmt/7.1.2',
-        'spdlog/1.8.1',
-        'frozen/1.0.0',
     )
     build_requires = (
         'catch2/2.13.3',
