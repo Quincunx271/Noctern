@@ -1,4 +1,6 @@
-{ pkgs ? import <nixpkgs> { } }:
+{
+  pkgs ? import <nixpkgs> { },
+}:
 with pkgs;
 
 mkShell {
@@ -7,6 +9,7 @@ mkShell {
     gcc13
     ninja
     llvmPackages_19.clang-tools
+    gdb
 
     spdlog
     fmt

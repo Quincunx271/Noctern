@@ -1,4 +1,3 @@
-find_package(FLEX 2.6.4 REQUIRED)
 find_package(Boost 1.74.0 REQUIRED)
 find_package(fmt 7.1.2 REQUIRED)
 find_package(Catch2 2.13.3 REQUIRED)
@@ -42,11 +41,8 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS "noctern/*.cpp" "noctern/*.hpp")
 file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "noctern/*.test.cpp")
 list(REMOVE_ITEM sources ${test_sources})
 
-flex_target(noctern.lex noctern/parsing/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
-
 add_library(Noctern
   ${sources}
-  ${FLEX_noctern.lex_OUTPUTS}
 )
 add_library(Noctern::Noctern ALIAS Noctern)
 target_include_directories(Noctern
