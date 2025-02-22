@@ -79,23 +79,28 @@ write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
 add_library(catch_main OBJECT ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
 target_link_libraries(catch_main PUBLIC Catch2::Catch2)
 
-add_executable(test.Noctern ${test_sources})
-target_link_libraries(test.Noctern
-  PRIVATE
-    Noctern::Noctern
-    catch_main
-)
-target_compile_options(test.Noctern
-  PRIVATE
-    ${compile_options}
-)
-target_link_options(test.Noctern
-  PRIVATE
-    ${link_options}
-)
-
 include(Catch)
 
-catch_discover_tests(test.Noctern
-  EXTRA_ARGS $<$<BOOL:${NOCTERN_TEST_COLOR}>:--use-colour=yes>
-)
+foreach(test_source IN LISTS test_sources)
+  get_filename_component(test_name ${test_source} NAME_WE)
+
+  add_executable(test.${test_name} ${test_source})
+  target_link_libraries(test.${test_name}
+    PRIVATE
+      Noctern::Noctern
+      catch_main
+  )
+  target_compile_options(test.${test_name}
+    PRIVATE
+      ${compile_options}
+  )
+  target_link_options(test.${test_name}
+    PRIVATE
+      ${link_options}
+  )
+
+  catch_discover_tests(test.${test_name}
+    EXTRA_ARGS $<$<BOOL:${NOCTERN_TEST_COLOR}>:--use-colour=yes>
+  )
+endforeach()
+

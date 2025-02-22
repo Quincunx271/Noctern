@@ -56,6 +56,7 @@ namespace noctern {
     case token::name: return #name;
             NOCTERN_X_TOKEN(NOCTERN_TOKEN_STR)
 #undef NOCTERN_TOKEN_STR
+        case token::empty_invalid: assert(false);
         }
         assert(false);
     }
@@ -97,10 +98,8 @@ namespace noctern {
     constexpr decltype(auto) all_tokens(Fn&& fn) {
         using enum token;
         return std::invoke(std::forward<Fn>(fn)
-        // clang-format off
 #define NOCTERN_TOKEN_TYPE(name) , val<name>
-            // clang-format on
-            NOCTERN_X_TOKEN(NOCTERN_TOKEN_TYPE)
+                NOCTERN_X_TOKEN(NOCTERN_TOKEN_TYPE)
 #undef NOCTERN_TOKEN_TYPE
         );
     }
@@ -123,6 +122,8 @@ namespace noctern {
     case token::name: return std::invoke(std::forward<Fn>(fn), val<token::name>);
             NOCTERN_X_TOKEN(NOCTERN_TOKEN_CASE)
 #undef NOCTERN_TOKEN_CASE
+        // This case should never happen.
+        case token::empty_invalid: assert(false);
         }
         assert(false);
     }
@@ -277,9 +278,15 @@ namespace noctern {
             , string_data_(std::move(builder.string_data_)) {
         }
 
+        size_t num_tokens() const {
+            return tokens_.size();
+        }
+
         // Runs a linear scan through the tokens, calling `fn` for each.
         //
         // `fn` is called like `fn(noctern::token{}, std::string_view{});`.
+        //
+        // The `string_view` values live as long as the `tokens` object.
         template <typename Fn>
         void walk(Fn&& fn) const {
             size_t string_data_index = 0;
