@@ -44,7 +44,4 @@ namespace noctern {
 
     template <auto V>
     inline constexpr auto val = val_t<V> {};
-
-    template <fixed_string S>
-    inline constexpr auto val<S> = val_t<S> {};
 }
