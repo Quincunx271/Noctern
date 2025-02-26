@@ -4,14 +4,7 @@
 
 #include <catch2/catch.hpp>
 
-namespace Catch {
-    template <>
-    struct StringMaker<noctern::token> {
-        static std::string convert(noctern::token token) {
-            return std::string(stringify(token));
-        }
-    };
-}
+#include "./tokenize.test.hpp"
 
 namespace noctern {
     namespace {

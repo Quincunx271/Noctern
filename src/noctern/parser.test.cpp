@@ -2,6 +2,8 @@
 
 #include <catch2/catch.hpp>
 
+#include "noctern/tokenize.test.hpp"
+
 namespace noctern {
     namespace {
         struct elaborated_token {
@@ -80,6 +82,38 @@ namespace noctern {
             noctern::tokens tokens(std::move(tokens_builder));
 
             noctern::parse_tree result = noctern::parse(tokens);
+
+            using enum noctern::token;
+            CHECK_THAT(result.tokens(),
+                Catch::Matchers::Equals(std::vector({
+                    fn_intro,
+                    ident,
+                    ident,
+                    ident,
+                    rparen,
+                    lbrace,
+                    valdef_intro,
+                    ident,
+                    ident,
+                    real_lit,
+                    minus,
+                    statement_end,
+                    return_,
+                    ident,
+                    ident,
+                    ident,
+                    real_lit,
+                    mult,
+                    int_lit,
+                    real_lit,
+                    plus,
+                    minus,
+                    plus,
+                    plus,
+                    statement_end,
+                    rbrace,
+                    statement_end,
+                })));
         }
     }
 }

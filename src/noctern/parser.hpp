@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include <vector>
 
 #include "noctern/tokenize.hpp"
@@ -10,6 +11,10 @@ namespace noctern {
         class builder;
 
         explicit parse_tree(builder builder);
+
+        const auto& tokens() const {
+            return postorder_;
+        }
 
     private:
         friend class builder;

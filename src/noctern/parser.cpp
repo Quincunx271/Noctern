@@ -1,9 +1,6 @@
 #include "./parser.hpp"
 
 #include <algorithm>
-#include <fmt/ostream.h>
-#include <iostream>
-#include <ostream>
 
 #include "noctern/enum.hpp"
 #include "noctern/meta.hpp"
@@ -75,63 +72,6 @@ namespace noctern {
         // Ensure that all rules are distinct from tokens.
         static_assert(enum_min(type<rule>) > enum_max(type<token>));
 
-        struct _action_wrapper {
-            enum class action : uint8_t {
-                // Ignored enum value. This is used to keep the `action` enumeration values separate
-                // from
-                // the `rule` values.
-                start_marker = enum_max(type<rule>),
-#define NOCTERN_X_ACTION(X)                                                                        \
-    X(push_token)                                                                                  \
-    X(push_token_and_pop)
-#define NOCTERN_MAKE_ENUM_VALUE(name) name,
-                NOCTERN_X_ACTION(NOCTERN_MAKE_ENUM_VALUE)
-#undef NOCTERN_MAKE_ENUM_VALUE
-
-                // A sentinel value.
-                empty_invalid,
-            };
-
-            NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(action)
-
-        private:
-            friend enum_mixin;
-
-            template <typename Fn>
-            friend constexpr decltype(auto) switch_introspect(action action, Fn&& fn) {
-                switch (action) {
-#define NOCTERN_ACTION_INTROSPECT(name)                                                            \
-    case action::name: {                                                                           \
-        constexpr std::string_view name_str = #name;                                               \
-        return std::invoke(std::forward<Fn>(fn), val<action::name>, name_str);                     \
-    }
-                    NOCTERN_X_ACTION(NOCTERN_ACTION_INTROSPECT)
-#undef NOCTERN_ACTION_INTROSPECT
-                case action::start_marker: assert(false);
-                case action::empty_invalid: assert(false);
-                }
-                assert(false);
-            }
-
-            template <typename Fn>
-            friend constexpr decltype(auto) introspect(type_t<action>, Fn&& fn) {
-                using enum action;
-                return std::invoke(std::forward<Fn>(fn)
-#define NOCTERN_ACTION_TYPE(name) , val<name>
-                        NOCTERN_X_ACTION(NOCTERN_ACTION_TYPE)
-#undef NOCTERN_ACTION_TYPE
-                );
-            }
-#undef NOCTERN_X_ACTION
-        };
-
-        using action = _action_wrapper::action;
-
-        // Ensure that all actions are distinct from rules.
-        static_assert(enum_min(type<action>) > enum_max(type<rule>));
-        // Ensure that all actions are distinct from tokens.
-        static_assert(enum_min(type<action>) > enum_max(type<token>));
-
         class stack_op {
             static constexpr int max_token = enum_max(type<noctern::token>);
             static constexpr int max_rule = enum_max(type<noctern::rule>);
@@ -143,10 +83,6 @@ namespace noctern {
 
             explicit constexpr stack_op(noctern::rule rule)
                 : value_(noctern::to_underlying(rule)) {
-            }
-
-            explicit constexpr stack_op(noctern::action action)
-                : value_(noctern::to_underlying(action)) {
             }
 
             // The token, else `token::empty_invalid` if it's not a token.
@@ -167,22 +103,11 @@ namespace noctern {
                 }
             }
 
-            // The action, else `action::empty_invalid` if it's not a action.
-            noctern::action action() const {
-                if (int {value_} > max_rule) {
-                    return static_cast<noctern::action>(value_);
-                } else {
-                    return action::empty_invalid;
-                }
-            }
-
             friend std::string format_as(stack_op op) {
                 if (auto token = op.token(); token != token::empty_invalid) {
                     return std::string(stringify(token));
                 } else if (auto rule = op.rule(); rule != rule::empty_invalid) {
                     return std::string(stringify(rule));
-                } else if (auto action = op.action(); action != action::empty_invalid) {
-                    return std::string(stringify(op.action()));
                 }
                 return std::to_string(int {op.value_});
             }
@@ -229,12 +154,6 @@ namespace noctern {
             postorder_.reserve(size_hint);
         }
 
-        // Mental model: parsing is actually a stack machine interpreter, with `stack_` being the
-        // bytecode. rules and tokens are a bytecode which either pops tokens (if they match), or
-        // expands out to more actions (rules do this). Maybe I can implement error handling and
-        // even pulling out semantic values as custom actions. Or maybe I can automate pulling out
-        // semantic values.
-        std::vector<stack_op> stack_;
         std::vector<token> postorder_;
         std::vector<std::string_view> string_data_;
     };
@@ -244,243 +163,183 @@ namespace noctern {
     }
 
     namespace {
-        template <rule rule>
-        void finish_rule(val_t<rule>, parse_tree::builder&) {
-        }
+        using token_view = std::ranges::subrange<tokens::const_iterator>;
 
-        void parse_at(val_t<rule::file>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::fn_intro) {
-                builder.stack_.emplace_back(rule::file);
-                builder.stack_.emplace_back(rule::fndef);
-            } else if (token == token_eof) {
-                // builder.stack_.emplace_back(token_eof);
-                return;
-            } else {
-                // ERROR!
-                assert(false && "parse error");
-            }
-        }
+        struct parser {
+            token_view tokens;
+            parse_tree::builder builder;
 
-        void parse_at(val_t<rule::fndef>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token != token::fn_intro) {
-                // ERROR! Or maybe just return?
-                assert(false && "parse error");
-            }
-            builder.stack_.emplace_back(token::statement_end);
-            builder.stack_.emplace_back(action::push_token);
-            builder.stack_.emplace_back(rule::expr);
-            builder.stack_.emplace_back(token::fn_outro);
-            builder.stack_.emplace_back(token::rparen);
-            builder.stack_.emplace_back(rule::fn_params);
-            builder.stack_.emplace_back(token::lparen);
-            builder.stack_.emplace_back(token::ident);
-            builder.stack_.emplace_back(token::fn_intro);
-
-            builder.postorder_.push_back(token::fn_intro);
-        }
-
-        void parse_at(val_t<rule::fn_params>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::rparen) {
-                builder.postorder_.emplace_back(token::rparen);
-                return;
-            }
-            if (token != token::ident) {
-                assert(false && "parse error");
+            auto advance_token(token token) {
+                if (tokens.empty() || tokens.front().token != token) {
+                    assert(false && "parse error");
+                }
+                auto it = tokens.front();
+                tokens.advance(1);
+                return it;
             }
 
-            builder.stack_.emplace_back(rule::fn_params);
-            builder.stack_.emplace_back(token::comma);
-            builder.stack_.emplace_back(token::ident);
-        }
-
-        void finish_rule(val_t<rule::fn_params>, parse_tree::builder& builder) {
-            builder.postorder_.push_back(token::rparen);
-        }
-
-        void parse_at(val_t<rule::expr>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::lbrace) {
-                builder.stack_.emplace_back(rule::block);
-            } else if (token == token::int_lit || token == token::real_lit || token == token::lparen
-                || token == token::ident) {
-                builder.stack_.emplace_back(rule::add_sub_expr);
-            } else {
-                // ERROR! Or maybe just return?
-                assert(false && "parse error");
+            auto push_token(tokens::const_iterator::token_and_str data) {
+                builder.postorder_.push_back(data.token);
+                builder.string_data_.push_back(data.string_data);
             }
-        }
 
-        void parse_at(val_t<rule::block>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            builder.stack_.emplace_back(token::rbrace);
-            builder.stack_.emplace_back(action::push_token);
-            builder.stack_.emplace_back(rule::return_);
-            builder.stack_.emplace_back(rule::valdecl);
-            builder.stack_.emplace_back(token::lbrace);
-
-            builder.postorder_.push_back(token::lbrace);
-        }
-
-        void parse_at(val_t<rule::return_>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            builder.stack_.emplace_back(token::statement_end);
-            builder.stack_.emplace_back(action::push_token);
-            builder.stack_.emplace_back(rule::expr);
-            builder.stack_.emplace_back(token::return_);
-
-            builder.postorder_.emplace_back(token::return_);
-        }
-
-        void parse_at(val_t<rule::valdecl>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            builder.stack_.emplace_back(token::statement_end);
-            builder.stack_.emplace_back(action::push_token);
-            builder.stack_.emplace_back(rule::expr);
-            builder.stack_.emplace_back(token::valdef_outro);
-            builder.stack_.emplace_back(token::ident);
-            builder.stack_.emplace_back(token::valdef_intro);
-
-            builder.postorder_.push_back(token::valdef_intro);
-        }
-
-        void parse_at(val_t<rule::add_sub_expr>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            builder.stack_.emplace_back(rule::add_sub_expr2);
-            builder.stack_.emplace_back(rule::div_mul_expr);
-        }
-
-        void parse_at(val_t<rule::add_sub_expr2>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::plus || token == token::minus) {
-                builder.stack_.emplace_back(token.token());
-                builder.stack_.emplace_back(action::push_token_and_pop);
-
-                builder.stack_.emplace_back(rule::expr);
-                builder.stack_.emplace_back(token.token());
+            void parse_at(val_t<rule::file>) {
+                while (!tokens.empty()) {
+                    const auto token_and_str = tokens.front();
+                    const token token = token_and_str.token;
+                    if (token == token::fn_intro) {
+                        parse_at(val<rule::fndef>);
+                    } else {
+                        // ERROR!
+                        assert(false && "parse error");
+                    }
+                }
             }
-        }
 
-        void parse_at(val_t<rule::div_mul_expr>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            builder.stack_.emplace_back(rule::div_mul_expr2);
-            builder.stack_.emplace_back(rule::base_expr);
-        }
+            void parse_at(val_t<rule::fndef>) {
+                builder.postorder_.push_back(advance_token(token::fn_intro).token);
+                push_token(advance_token(token::ident));
+                advance_token(token::lparen);
 
-        void parse_at(val_t<rule::div_mul_expr2>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::div || token == token::mult) {
-                builder.stack_.emplace_back(token.token());
-                builder.stack_.emplace_back(action::push_token_and_pop);
+                parse_at(val<rule::fn_params>);
 
-                builder.stack_.emplace_back(rule::div_mul_expr);
-                builder.stack_.emplace_back(token.token());
+                builder.postorder_.push_back(advance_token(token::rparen).token);
+                advance_token(token::fn_outro);
+
+                parse_at(val<rule::expr>);
+
+                builder.postorder_.push_back(advance_token(token::statement_end).token);
             }
-        }
 
-        void parse_at(val_t<rule::base_expr>, token_or_eof token, std::string_view token_value,
-            parse_tree::builder& builder) {
-            if (token == token::lparen) {
-                builder.stack_.emplace_back(token::rparen);
-                builder.stack_.emplace_back(rule::expr);
-                builder.stack_.emplace_back(token::lparen);
-            } else if (token == token::int_lit) {
-                builder.stack_.emplace_back(token::int_lit);
-            } else if (token == token::real_lit) {
-                builder.stack_.emplace_back(token::real_lit);
-            } else if (token == token::ident) {
-                builder.stack_.emplace_back(token::ident);
-            } else {
-                // ERROR
-                assert(false && "parse error");
+            void parse_at(val_t<rule::fn_params>) {
+                while (!tokens.empty() && tokens.front().token != token::rparen) {
+                    push_token(advance_token(token::ident));
+
+                    if (!tokens.empty() && tokens.front().token != token::rparen) {
+                        if (tokens.front().token != token::comma) {
+                            assert(false && "expected comma");
+                        }
+                        tokens.advance(1);
+                    }
+                }
+                if (tokens.empty()) {
+                    assert(false && "parse error");
+                }
             }
-        }
+
+            void parse_at(val_t<rule::expr>) {
+                if (tokens.empty()) {
+                    // ERROR!
+                    assert(false && "parse error");
+                }
+                token token = tokens.front().token;
+                if (token == token::lbrace) {
+                    parse_at(val<rule::block>);
+                } else if (token == token::int_lit || token == token::real_lit
+                    || token == token::lparen || token == token::ident) {
+                    parse_at(val<rule::add_sub_expr>);
+                } else {
+                    // ERROR! Or maybe just return?
+                    assert(false && "parse error");
+                }
+            }
+
+            void parse_at(val_t<rule::block>) {
+                builder.postorder_.push_back(advance_token(token::lbrace).token);
+
+                while (!tokens.empty() && tokens.front().token != token::return_) {
+                    parse_at(val<rule::valdecl>);
+                }
+
+                parse_at(val<rule::return_>);
+
+                builder.postorder_.push_back(advance_token(token::rbrace).token);
+            }
+
+            void parse_at(val_t<rule::return_>) {
+                builder.postorder_.push_back(advance_token(token::return_).token);
+                parse_at(val<rule::expr>);
+                builder.postorder_.emplace_back(advance_token(token::statement_end).token);
+            }
+
+            void parse_at(val_t<rule::valdecl>) {
+                builder.postorder_.push_back(advance_token(token::valdef_intro).token);
+                push_token(advance_token(token::ident));
+                advance_token(token::valdef_outro);
+
+                parse_at(val<rule::expr>);
+
+                builder.postorder_.push_back(advance_token(token::statement_end).token);
+            }
+
+            void parse_at(val_t<rule::add_sub_expr>) {
+                // TODO: avoid recursing here.
+                parse_at(val<rule::div_mul_expr>);
+                parse_at(val<rule::add_sub_expr2>);
+            }
+
+            void parse_at(val_t<rule::add_sub_expr2>) {
+                if (tokens.empty()) {
+                    // Okay!
+                    return;
+                }
+                token token = tokens.front().token;
+                if (token == token::plus || token == token::minus) {
+                    tokens.advance(1);
+                    parse_at(val<rule::expr>);
+
+                    builder.postorder_.push_back(token);
+                }
+            }
+
+            void parse_at(val_t<rule::div_mul_expr>) {
+                parse_at(val<rule::base_expr>);
+                parse_at(val<rule::div_mul_expr2>);
+            }
+
+            void parse_at(val_t<rule::div_mul_expr2>) {
+                if (tokens.empty()) {
+                    // Okay!
+                    return;
+                }
+                token token = tokens.front().token;
+                if (token == token::div || token == token::mult) {
+                    tokens.advance(1);
+                    parse_at(val<rule::div_mul_expr>);
+
+                    builder.postorder_.push_back(token);
+                }
+            }
+
+            void parse_at(val_t<rule::base_expr>) {
+                if (tokens.empty()) {
+                    // Error!
+                    assert(false && "parse error");
+                }
+                token token = tokens.front().token;
+                if (token == token::lparen) {
+                    tokens.advance(1);
+                    parse_at(val<rule::expr>);
+
+                    advance_token(token::rparen);
+                } else if (token == token::int_lit || token == token::real_lit
+                    || token == token::ident) {
+                    push_token(advance_token(token));
+                } else {
+                    // ERROR
+                    assert(false && "parse error");
+                }
+            }
+        };
     }
 
     parse_tree parse(const tokens& input) {
-        {
-            fmt::println("Tokens {}:", input.num_tokens());
-            input.walk([](token token, std::string_view value) {
-                if (has_data(token)) {
-                    fmt::println("\t{}: {}", stringify(token), value);
-                } else {
-                    fmt::println("\t{}", stringify(token));
-                }
-            });
-        }
-        parse_tree::builder builder;
-        builder.reserve(input.num_tokens());
-        builder.stack_.push_back(stack_op(rule::file));
+        parser parser;
+        parser.builder.reserve(input.num_tokens());
+        parser.tokens = token_view(input.begin(), input.end());
 
-        input.walk([&](noctern::token token, std::string_view value) {
-            if (token == token::space) {
-                return;
-            }
-            fmt::println("Saw {}", stringify(token));
-            while (true) {
-                fmt::println(std::cerr, "Stack {}: {}", builder.stack_.size(),
-                    fmt::join(builder.stack_, ","));
-                stack_op next = builder.stack_.back();
-                builder.stack_.pop_back();
+        parser.parse_at(val<rule::file>);
 
-                if (auto next_action = next.action(); next_action != action::empty_invalid) {
-                    assert(next_action == action::push_token
-                        || next_action == action::push_token_and_pop);
-
-                    stack_op token = builder.stack_.back();
-                    assert(token.token() != token::empty_invalid);
-                    builder.postorder_.push_back(token.token());
-                    if (next_action == action::push_token_and_pop) {
-                        builder.stack_.pop_back();
-                    }
-                    continue;
-                } else if (auto next_token = next.token(); next_token != token::empty_invalid) {
-                    if (token != next_token) {
-                        fmt::println(
-                            std::cerr, "Parse error; got: {} want: {}", stringify(token), next);
-                        fmt::println(std::cerr, "Stack {}: {}", builder.stack_.size(),
-                            fmt::join(builder.stack_, ","));
-                        // Parse error!
-                        assert(false && "parse error");
-                    } else {
-                        if (has_data(token)) {
-                            builder.postorder_.push_back(next_token);
-                            builder.string_data_.push_back(value);
-                        }
-                        return;
-                    }
-                }
-                assert(next.rule() != rule::empty_invalid);
-                enum_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
-                    parse_at(top_rule, token_or_eof(token), value, builder);
-                });
-            }
-        });
-        while (!builder.stack_.empty()) {
-            stack_op next = builder.stack_.back();
-            builder.stack_.pop_back();
-
-            if (auto next_token = next.token(); next_token != token::empty_invalid) {
-                // Parse error! Not eof.
-                assert(false && "parse error");
-            }
-            assert(next.rule() != rule::empty_invalid);
-            enum_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
-                parse_at(top_rule, token_eof, "", builder);
-            });
-        }
-        fmt::println("Tokens {}:", builder.postorder_.size());
-        int index = 0;
-        for (token token : builder.postorder_) {
-            if (has_data(token)) {
-                fmt::println("\t{}: {}", stringify(token), builder.string_data_[index++]);
-            } else {
-                fmt::println("\t{}", stringify(token));
-            }
-        }
-
-        return parse_tree(std::move(builder));
+        return parse_tree(std::move(parser.builder));
     }
 }
