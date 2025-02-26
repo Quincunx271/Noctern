@@ -42,4 +42,4 @@ jobs:
       run: nix-shell --run 'cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}'
 
     - name: Run Tests
-      run: nix-shell --run 'ctest --tets-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV'
+      run: nix-shell --run 'ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV'
