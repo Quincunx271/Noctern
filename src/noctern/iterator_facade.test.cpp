@@ -87,8 +87,6 @@ namespace noctern {
         using traits = std::iterator_traits<Iter>;
 
         TEST_CASE("std::iterator_traits<iterator_facade>") {
-            rand_ints a, b;
-            a == b;
             SECTION("reference") {
                 STATIC_REQUIRE(std::same_as<traits<one_shot_ints>::reference, int>);
                 STATIC_REQUIRE(std::same_as<traits<forward_ints>::reference, int>);
