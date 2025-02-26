@@ -1,4 +1,5 @@
 find_package(FLEX 2.6.4 REQUIRED)
+find_package(Boost 1.74.0 REQUIRED)
 find_package(fmt 7.1.2 REQUIRED)
 find_package(Catch2 2.13.3 REQUIRED)
 
