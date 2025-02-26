@@ -30,11 +30,10 @@ jobs:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
         nix_path: nixpkgs=channel:nixos-unstable
 
-    - name: Install packages
-      run: nix-shell
-
     - name: Configure
-      run: cmake -S. -B${{ runner.workspace }}/build
+      run: |
+        nix-shell
+        cmake -S. -B${{ runner.workspace }}/build
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
