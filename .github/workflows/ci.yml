@@ -31,7 +31,7 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Install packages
-      run: nix shell
+      run: nix-shell
 
     - name: Configure
       run: cmake -S. -B${{ runner.workspace }}/build
