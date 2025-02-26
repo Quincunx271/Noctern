@@ -12,60 +12,38 @@ jobs:
 
     strategy:
       matrix:
-        cxx: [g++-10]
-        std: [20]
+        cxx: [g++, clang++]
+        std: [20, 23]
         build_type: [Debug, Release]
 
     steps:
+    - uses: actions/checkout@v4
+
+    - uses: cachix/install-nix-action@v27
+      with:
+        github_access_token: ${{ secrets.GITHUB_TOKEN }}
+        nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Install packages
+      # nix caches packages, so this will do the installs.
+      run: nix-shell
+
     - name: Print Configuration
       run: |
-        ${{ matrix.cxx }} --version
-        echo std=c++${{ matrix.std }}
-        cmake --version
-
-    - uses: actions/checkout@v2
+        nix-shell --run '${{ matrix.cxx }} --version'
+        echo --std=c++${{ matrix.std }}
+        nix-shell --run 'cmake --version'
 
     - name: Configure
-      run: cmake -S. -B${{ runner.workspace }}/build
+      run: nix-shell --run 'cmake -S. -B${{ runner.workspace }}/build
+            -GNinja
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=ON
+            -DNOCTERN_WARNINGS_AS_ERRORS=ON'
 
     - name: Build
-      working-directory: ${{ runner.workspace }}/build
-      run: cmake --build . --config ${{ matrix.build_type }} -j2
+      run: nix-shell --run 'cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}'
 
     - name: Run Tests
-      working-directory: ${{ runner.workspace }}/build
-      run: ctest -C ${{ matrix.build_type }} -VV
-
-  build-windows:
-    runs-on: windows-latest
-
-    strategy:
-      matrix:
-        std: [20]
-        build_type: [Debug, Release]
-
-    steps:
-    - name: Print Configuration
-      run: |
-        echo std=c++${{ matrix.std }}
-        cmake --version
-
-    - uses: actions/checkout@v2
-
-    - name: Configure
-      run: cmake -S. -B${{ runner.workspace }}/build
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-            -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=ON
-
-    - name: Build
-      working-directory: ${{ runner.workspace }}/build
-      run: ls && cmake --build . --config ${{ matrix.build_type }} -j2
-
-    - name: Run Tests
-      working-directory: ${{ runner.workspace }}/build
-      run: ctest -C ${{ matrix.build_type }} -VV
+      run: nix-shell --run 'ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV'

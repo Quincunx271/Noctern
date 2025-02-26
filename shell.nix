@@ -7,6 +7,7 @@ mkShell {
     gcc13
     ninja
     llvmPackages_19.clang-tools
+    llvmPackages_19.libcxxClang
 
     spdlog
     fmt
