@@ -15,9 +15,9 @@
 #include "noctern/meta.hpp"
 
 namespace noctern {
-    struct _token_wrapper {
-        // The token identifier.
-        enum class token : uint8_t {
+    struct _token_id_wrapper {
+        // The token_id identifier.
+        enum class token_id : uint8_t {
         // X-macro for the meaningful enumeration values.
 #define NOCTERN_X_TOKEN(X)                                                                         \
     X(invalid)                                                                                     \
@@ -58,18 +58,18 @@ namespace noctern {
         friend enum_mixin;
 
         template <typename Fn>
-        friend constexpr decltype(auto) switch_introspect(token t, Fn&& fn) {
+        friend constexpr decltype(auto) switch_introspect(token_id t, Fn&& fn) {
             switch (t) {
-                using enum token;
+                using enum token_id;
                 NOCTERN_X_TOKEN(NOCTERN_ENUM_X_INTROSPECT)
-            case token::empty_invalid: assert(false);
+            case token_id::empty_invalid: assert(false);
             }
             assert(false);
         }
 
         template <typename Fn>
-        friend constexpr decltype(auto) introspect(type_t<token>, Fn&& fn) {
-            using enum token;
+        friend constexpr decltype(auto) introspect(type_t<token_id>, Fn&& fn) {
+            using enum token_id;
             return std::invoke(std::forward<Fn>(fn)
 #define NOCTERN_TOKEN_TYPE(name) , val<name>
                     NOCTERN_X_TOKEN(NOCTERN_TOKEN_TYPE)
@@ -79,15 +79,15 @@ namespace noctern {
 #undef NOCTERN_X_TOKEN
     };
 
-    using token = _token_wrapper::token;
+    using token_id = _token_id_wrapper::token_id;
 
     ///////////////
     // "Data" definitions.
     //
-    // This is the mechanism by which we associate data with a token.
+    // This is the mechanism by which we associate data with a token_id.
     ///
 
-    // Indicates that the associated data for the token is known at compile time.
+    // Indicates that the associated data for the token_id is known at compile time.
     template <fixed_string S>
     struct empty_data {
         static constexpr std::string_view value = S;
@@ -96,100 +96,100 @@ namespace noctern {
     template <typename T>
     inline constexpr bool is_empty_data = requires(T t) { []<auto V>(empty_data<V>) { }(t); };
 
-    // Indicates that the associated data for the token is a runtime string.
+    // Indicates that the associated data for the token_id is a runtime string.
     struct string_data { };
 
-    // Specialized for each `token` enumeration.
-    template <token token>
+    // Specialized for each `token_id` enumeration.
+    template <token_id token_id>
     inline constexpr auto token_data = nullptr;
 
     template <>
-    inline constexpr auto token_data<token::invalid> = string_data {};
+    inline constexpr auto token_data<token_id::invalid> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token::space> = string_data {};
+    inline constexpr auto token_data<token_id::space> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token::fn_intro> = empty_data<"def"> {};
+    inline constexpr auto token_data<token_id::fn_intro> = empty_data<"def"> {};
 
     template <>
-    inline constexpr auto token_data<token::fn_outro> = empty_data<":"> {};
+    inline constexpr auto token_data<token_id::fn_outro> = empty_data<":"> {};
 
     template <>
-    inline constexpr auto token_data<token::lbrace> = empty_data<"{"> {};
+    inline constexpr auto token_data<token_id::lbrace> = empty_data<"{"> {};
 
     template <>
-    inline constexpr auto token_data<token::rbrace> = empty_data<"}"> {};
+    inline constexpr auto token_data<token_id::rbrace> = empty_data<"}"> {};
 
     template <>
-    inline constexpr auto token_data<token::comma> = empty_data<","> {};
+    inline constexpr auto token_data<token_id::comma> = empty_data<","> {};
 
     template <>
-    inline constexpr auto token_data<token::valdef_intro> = empty_data<"let"> {};
+    inline constexpr auto token_data<token_id::valdef_intro> = empty_data<"let"> {};
 
     template <>
-    inline constexpr auto token_data<token::valdef_outro> = empty_data<"="> {};
+    inline constexpr auto token_data<token_id::valdef_outro> = empty_data<"="> {};
 
     template <>
-    inline constexpr auto token_data<token::ident> = string_data {};
+    inline constexpr auto token_data<token_id::ident> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token::int_lit> = string_data {};
+    inline constexpr auto token_data<token_id::int_lit> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token::real_lit> = string_data {};
+    inline constexpr auto token_data<token_id::real_lit> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token::plus> = empty_data<"+"> {};
+    inline constexpr auto token_data<token_id::plus> = empty_data<"+"> {};
 
     template <>
-    inline constexpr auto token_data<token::minus> = empty_data<"-"> {};
+    inline constexpr auto token_data<token_id::minus> = empty_data<"-"> {};
 
     template <>
-    inline constexpr auto token_data<token::mult> = empty_data<"*"> {};
+    inline constexpr auto token_data<token_id::mult> = empty_data<"*"> {};
 
     template <>
-    inline constexpr auto token_data<token::div> = empty_data<"/"> {};
+    inline constexpr auto token_data<token_id::div> = empty_data<"/"> {};
 
     template <>
-    inline constexpr auto token_data<token::lparen> = empty_data<"("> {};
+    inline constexpr auto token_data<token_id::lparen> = empty_data<"("> {};
 
     template <>
-    inline constexpr auto token_data<token::rparen> = empty_data<")"> {};
+    inline constexpr auto token_data<token_id::rparen> = empty_data<")"> {};
 
     template <>
-    inline constexpr auto token_data<token::statement_end> = empty_data<";"> {};
+    inline constexpr auto token_data<token_id::statement_end> = empty_data<";"> {};
 
     template <>
-    inline constexpr auto token_data<token::return_> = empty_data<"return"> {};
+    inline constexpr auto token_data<token_id::return_> = empty_data<"return"> {};
 
-    // Whether there is runtime data associated with this `token` type.
-    constexpr bool has_data(token token) {
-        return enum_switch(token, []<noctern::token token>(val_t<token>) {
-            return !is_empty_data<std::remove_cvref_t<decltype(token_data<token>)>>;
+    // Whether there is runtime data associated with this `token_id` type.
+    constexpr bool has_data(token_id token_id) {
+        return enum_switch(token_id, []<noctern::token_id token_id>(val_t<token_id>) {
+            return !is_empty_data<std::remove_cvref_t<decltype(token_data<token_id>)>>;
         });
     }
 
     class token_without_data {
     public:
-        template <token token>
-            requires(token == token::empty_invalid || !has_data(token))
-        explicit constexpr token_without_data(val_t<token>)
-            : value(token) {
+        template <token_id token_id>
+            requires(token_id == token_id::empty_invalid || !has_data(token_id))
+        explicit constexpr token_without_data(val_t<token_id>)
+            : value(token_id) {
         }
 
-        token value;
+        token_id value;
     };
 
     class token_with_data {
     public:
-        template <token token>
-            requires(has_data(token))
-        explicit constexpr token_with_data(val_t<token>)
-            : value(token) {
+        template <token_id token_id>
+            requires(has_data(token_id))
+        explicit constexpr token_with_data(val_t<token_id>)
+            : value(token_id) {
         }
 
-        token value;
+        token_id value;
     };
 
     // The result of calling `tokenize_all`.
@@ -203,18 +203,19 @@ namespace noctern {
 
         public:
             struct token_and_str {
-                noctern::token token;
+                noctern::token_id token_id;
                 std::string_view string_data;
             };
 
             constexpr const_iterator() = default;
 
             token_and_str read() const {
-                noctern::token token = tokens_->tokens_[index_];
+                noctern::token_id token_id = tokens_->tokens_[index_];
 
-                auto str_data = enum_switch(token,
-                    []<noctern::token token>(val_t<token>) -> std::optional<std::string_view> {
-                        using token_data_type = std::remove_cvref_t<decltype(token_data<token>)>;
+                auto str_data = enum_switch(token_id,
+                    []<noctern::token_id token_id>(
+                        val_t<token_id>) -> std::optional<std::string_view> {
+                        using token_data_type = std::remove_cvref_t<decltype(token_data<token_id>)>;
 
                         if constexpr (is_empty_data<token_data_type>) {
                             return token_data_type::value;
@@ -225,7 +226,7 @@ namespace noctern {
                 if (!str_data.has_value()) {
                     str_data = tokens_->string_data_[string_data_index_];
                 }
-                return {token, *str_data};
+                return {token_id, *str_data};
             }
 
             template <ptrdiff_t N>
@@ -265,26 +266,26 @@ namespace noctern {
             friend class tokens;
 
         public:
-            void add_token(token_with_data token, std::string_view string_data) {
-                tokens_.push_back(token.value);
+            void add_token(token_with_data token_id, std::string_view string_data) {
+                tokens_.push_back(token_id.value);
                 string_data_.push_back(string_data);
             }
 
-            void add_token(token_without_data token) {
-                tokens_.push_back(token.value);
+            void add_token(token_without_data token_id) {
+                tokens_.push_back(token_id.value);
             }
 
-            template <token V, typename... Args>
-            void add_token(val_t<V> token, Args... args) {
+            template <token_id V, typename... Args>
+            void add_token(val_t<V> token_id, Args... args) {
                 if constexpr (std::constructible_from<token_with_data, val_t<V>>) {
-                    add_token(token_with_data(token), args...);
+                    add_token(token_with_data(token_id), args...);
                 } else {
-                    add_token(token_without_data(token), args...);
+                    add_token(token_without_data(token_id), args...);
                 }
             }
 
         private:
-            std::vector<token> tokens_;
+            std::vector<token_id> tokens_;
             std::vector<std::string_view> string_data_;
         };
 
@@ -307,13 +308,13 @@ namespace noctern {
 
         // Runs a linear scan through the tokens, calling `fn` for each.
         //
-        // `fn` is called like `fn(noctern::token{}, std::string_view{});`.
+        // `fn` is called like `fn(noctern::token_id{}, std::string_view{});`.
         //
         // The `string_view` values live as long as the `tokens` object.
         template <typename Fn>
         void walk(Fn&& fn) const {
-            for (const const_iterator::token_and_str token : *this) {
-                std::invoke(fn, token.token, token.string_data);
+            for (const const_iterator::token_and_str token_id : *this) {
+                std::invoke(fn, token_id.token_id, token_id.string_data);
             }
         }
 
@@ -323,12 +324,12 @@ namespace noctern {
         // The parser only needs to work directly on the tokens. We organize memory to encourage
         // this.
         //
-        // Not every token has runtime string data, so we don't store the data if it doesn't matter.
-        // Note that we could actually optimize the data even more, at the expense of compute: we
-        // don't need to store a full `string_view`, but only an offset into the original buffer. We
-        // could retokenize to determine the string value.
+        // Not every token_id has runtime string data, so we don't store the data if it doesn't
+        // matter. Note that we could actually optimize the data even more, at the expense of
+        // compute: we don't need to store a full `string_view`, but only an offset into the
+        // original buffer. We could retokenize to determine the string value.
 
-        std::vector<token> tokens_;
+        std::vector<token_id> tokens_;
         std::vector<std::string_view> string_data_;
     };
     static_assert(std::bidirectional_iterator<tokens::const_iterator>);

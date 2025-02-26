@@ -19,7 +19,7 @@ namespace noctern {
     private:
         friend class builder;
 
-        std::vector<token> postorder_;
+        std::vector<token_id> postorder_;
     };
 
     parse_tree parse(const tokens& input);

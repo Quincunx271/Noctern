@@ -7,25 +7,25 @@
 namespace noctern {
     namespace {
         struct elaborated_token {
-            noctern::token token;
+            noctern::token_id token_id;
             std::string_view value;
 
-            elaborated_token(noctern::token token)
-                : token(token) {
-                assert(!has_data(token));
+            elaborated_token(noctern::token_id token_id)
+                : token_id(token_id) {
+                assert(!has_data(token_id));
             }
-            elaborated_token(noctern::token token, std::string_view value)
-                : token(token)
+            elaborated_token(noctern::token_id token_id, std::string_view value)
+                : token_id(token_id)
                 , value(value) {
-                assert(has_data(token));
+                assert(has_data(token_id));
             }
         };
 
         template <int N>
         void add_all(tokens::builder& builder, elaborated_token (&&tokens)[N]) {
             for (int i = 0; i < N; ++i) {
-                enum_switch(tokens[i].token, [&]<token token>(val_t<token> t) {
-                    if constexpr (has_data(token)) {
+                enum_switch(tokens[i].token_id, [&]<token_id token_id>(val_t<token_id> t) {
+                    if constexpr (has_data(token_id)) {
                         builder.add_token(t, tokens[i].value);
                     } else {
                         builder.add_token(t);
@@ -37,7 +37,7 @@ namespace noctern {
         TEST_CASE("parse works") {
             tokens::builder tokens_builder;
             {
-                using enum token;
+                using enum token_id;
                 noctern::add_all(tokens_builder,
                     // def silly_add(x, y,): {
                     //     let z = y - 0.2;
@@ -83,7 +83,7 @@ namespace noctern {
 
             noctern::parse_tree result = noctern::parse(tokens);
 
-            using enum noctern::token;
+            using enum noctern::token_id;
             CHECK_THAT(result.tokens(),
                 Catch::Matchers::Equals(std::vector({
                     fn_intro,

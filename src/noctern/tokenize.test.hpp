@@ -7,9 +7,9 @@
 
 namespace Catch {
     template <>
-    struct StringMaker<noctern::token> {
-        static std::string convert(noctern::token token) {
-            return std::string(stringify(token));
+    struct StringMaker<noctern::token_id> {
+        static std::string convert(noctern::token_id token_id) {
+            return std::string(stringify(token_id));
         }
     };
 }

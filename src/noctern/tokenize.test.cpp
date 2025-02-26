@@ -14,7 +14,7 @@ namespace noctern {
             std::string name;
 
             std::string input = "";
-            std::vector<token> expected = {};
+            std::vector<token_id> expected = {};
             std::vector<std::string> expected_str_data = {};
         };
 
@@ -24,170 +24,170 @@ namespace noctern {
                 {
                     .name = "fn_intro",
                     .input = "def",
-                    .expected = {token::fn_intro},
+                    .expected = {token_id::fn_intro},
                     .expected_str_data = {"def"},
                 },
                 {
                     .name = "fn_outro",
                     .input = ":",
-                    .expected = {token::fn_outro},
+                    .expected = {token_id::fn_outro},
                     .expected_str_data = {":"},
                 },
                 {
                     .name = "lbrace",
                     .input = "{",
-                    .expected = {token::lbrace},
+                    .expected = {token_id::lbrace},
                     .expected_str_data = {"{"},
                 },
                 {
                     .name = "rbrace",
                     .input = "}",
-                    .expected = {token::rbrace},
+                    .expected = {token_id::rbrace},
                     .expected_str_data = {"}"},
                 },
                 {
                     .name = "valdef_intro",
                     .input = "let",
-                    .expected = {token::valdef_intro},
+                    .expected = {token_id::valdef_intro},
                     .expected_str_data = {"let"},
                 },
                 {
                     .name = "valdef_outro",
                     .input = "=",
-                    .expected = {token::valdef_outro},
+                    .expected = {token_id::valdef_outro},
                     .expected_str_data = {"="},
                 },
                 {
                     .name = "ident/ordinary",
                     .input = "foo",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"foo"},
                 },
                 {
                     .name = "ident/camel",
                     .input = "myVar",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"myVar"},
                 },
                 {
                     .name = "ident/Pascal",
                     .input = "MyVar",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"MyVar"},
                 },
                 {
                     .name = "ident/snake",
                     .input = "my_var_special0",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"my_var_special0"},
                 },
                 {
                     .name = "ident/starts with underscore",
                     .input = "_hi",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"_hi"},
                 },
                 {
                     .name = "ident/one character",
                     .input = "X",
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {"X"},
                 },
                 {
                     // Consider disallowing this.
                     .name = "non-ident/starts with number",
                     .input = "1var",
-                    .expected = {token::int_lit, token::ident},
+                    .expected = {token_id::int_lit, token_id::ident},
                     .expected_str_data = {"1", "var"},
                 },
                 {
                     .name = "int_lit/ordinary",
                     .input = "12345",
-                    .expected = {token::int_lit},
+                    .expected = {token_id::int_lit},
                     .expected_str_data = {"12345"},
                 },
                 {
                     .name = "int_lit/leading zeros",
                     .input = "0001",
-                    .expected = {token::int_lit},
+                    .expected = {token_id::int_lit},
                     .expected_str_data = {"0001"},
                 },
                 {
                     .name = "int_lit/zero",
                     .input = "0",
-                    .expected = {token::int_lit},
+                    .expected = {token_id::int_lit},
                     .expected_str_data = {"0"},
                 },
                 {
                     .name = "real_lit/ordinary",
                     .input = "12345.67890",
-                    .expected = {token::real_lit},
+                    .expected = {token_id::real_lit},
                     .expected_str_data = {"12345.67890"},
                 },
                 {
                     .name = "real_lit/no trailing digits",
                     .input = "12345.",
-                    .expected = {token::real_lit},
+                    .expected = {token_id::real_lit},
                     .expected_str_data = {"12345."},
                 },
                 {
                     .name = "real_lit/no leading digits",
                     .input = ".1234",
-                    .expected = {token::real_lit},
+                    .expected = {token_id::real_lit},
                     .expected_str_data = {".1234"},
                 },
                 {
                     .name = "real_lit/no digits",
                     .input = ".",
-                    .expected = {token::real_lit},
+                    .expected = {token_id::real_lit},
                     .expected_str_data = {"."},
                 },
                 {
                     .name = "plus",
                     .input = "+",
-                    .expected = {token::plus},
+                    .expected = {token_id::plus},
                     .expected_str_data = {"+"},
                 },
                 {
                     .name = "minus",
                     .input = "-",
-                    .expected = {token::minus},
+                    .expected = {token_id::minus},
                     .expected_str_data = {"-"},
                 },
                 {
                     .name = "mult",
                     .input = "*",
-                    .expected = {token::mult},
+                    .expected = {token_id::mult},
                     .expected_str_data = {"*"},
                 },
                 {
                     .name = "div",
                     .input = "/",
-                    .expected = {token::div},
+                    .expected = {token_id::div},
                     .expected_str_data = {"/"},
                 },
                 {
                     .name = "lparen",
                     .input = "(",
-                    .expected = {token::lparen},
+                    .expected = {token_id::lparen},
                     .expected_str_data = {"("},
                 },
                 {
                     .name = "rparen",
                     .input = ")",
-                    .expected = {token::rparen},
+                    .expected = {token_id::rparen},
                     .expected_str_data = {")"},
                 },
                 {
                     .name = "statement_end",
                     .input = ";",
-                    .expected = {token::statement_end},
+                    .expected = {token_id::statement_end},
                     .expected_str_data = {";"},
                 },
                 {
                     .name = "return",
                     .input = "return",
-                    .expected = {token::return_},
+                    .expected = {token_id::return_},
                     .expected_str_data = {"return"},
                 },
             };
@@ -198,7 +198,7 @@ namespace noctern {
                 test_cases.push_back({
                     .name = "ident/range boundaries/" + s,
                     .input = s,
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {s},
                 });
             }
@@ -208,7 +208,7 @@ namespace noctern {
                 test_cases.push_back({
                     .name = "ident/range boundaries/" + s,
                     .input = s,
-                    .expected = {token::ident},
+                    .expected = {token_id::ident},
                     .expected_str_data = {s},
                 });
             }
@@ -218,7 +218,7 @@ namespace noctern {
                 test_cases.push_back({
                     .name = "int_lit/all individual digits/" + s,
                     .input = s,
-                    .expected = {token::int_lit},
+                    .expected = {token_id::int_lit},
                     .expected_str_data = {s},
                 });
             }
@@ -230,14 +230,14 @@ namespace noctern {
             test_cases.push_back({
                 .name = "function definition stream",
                 .input = R"(def foobar(x, y): { let z = y; return z   + x + 0.2; })",
-                .expected = {token::fn_intro, token::space, token::ident, token::lparen,
-                    token::ident, token::comma, token::space, token::ident, token::rparen,
-                    token::fn_outro, token::space, token::lbrace, token::space, token::valdef_intro,
-                    token::space, token::ident, token::space, token::valdef_outro, token::space,
-                    token::ident, token::statement_end, token::space, token::return_, token::space,
-                    token::ident, token::space, token::plus, token::space, token::ident,
-                    token::space, token::plus, token::space, token::real_lit, token::statement_end,
-                    token::space, token::rbrace},
+                .expected = {token_id::fn_intro, token_id::space, token_id::ident, token_id::lparen,
+                    token_id::ident, token_id::comma, token_id::space, token_id::ident, token_id::rparen,
+                    token_id::fn_outro, token_id::space, token_id::lbrace, token_id::space, token_id::valdef_intro,
+                    token_id::space, token_id::ident, token_id::space, token_id::valdef_outro, token_id::space,
+                    token_id::ident, token_id::statement_end, token_id::space, token_id::return_, token_id::space,
+                    token_id::ident, token_id::space, token_id::plus, token_id::space, token_id::ident,
+                    token_id::space, token_id::plus, token_id::space, token_id::real_lit, token_id::statement_end,
+                    token_id::space, token_id::rbrace},
                 .expected_str_data = {"def", " ", "foobar", "(", "x", ",", " ", "y", ")", ":", " ",
                     "{", " ", "let", " ", "z", " ", "=", " ", "y", ";", " ", "return", " ", "z",
                     "   ", "+", " ", "x", " ", "+", " ", "0.2", ";", " ", "}"},
@@ -247,10 +247,10 @@ namespace noctern {
                 SECTION(test_case.name) {
                     tokens tokens = tokenize_all(test_case.input);
 
-                    std::vector<token> actual;
+                    std::vector<token_id> actual;
                     std::vector<std::string> actual_str_data;
-                    tokens.walk([&](token token, std::string_view str_data) {
-                        actual.push_back(token);
+                    tokens.walk([&](token_id token_id, std::string_view str_data) {
+                        actual.push_back(token_id);
                         actual_str_data.emplace_back(str_data);
                     });
 
