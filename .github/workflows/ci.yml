@@ -39,9 +39,7 @@ jobs:
             -DNOCTERN_WARNINGS_AS_ERRORS=ON'
 
     - name: Build
-      working-directory: ${{ runner.workspace }}/build
-      run: nix-shell --run 'cmake --build . --config ${{ matrix.build_type }}'
+      run: nix-shell --run 'cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}'
 
     - name: Run Tests
-      working-directory: ${{ runner.workspace }}/build
-      run: nix-shell --run 'ctest -C ${{ matrix.build_type }} -VV'
+      run: nix-shell --run 'ctest --tets-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV'
