@@ -63,13 +63,13 @@ namespace noctern {
         }
 
         Derived& operator++() {
-            self().advance(val<1>);
+            self().advance(val<iterator_facade_internal::diff_type<Derived> {1}>);
             return self();
         }
 
         Derived operator++(int) {
             Derived cpy = self();
-            ++*this;
+            ++self();
             return cpy;
         }
 
@@ -103,7 +103,7 @@ namespace noctern {
         Derived& operator--()
             requires iterator_facade_internal::can_decrement<Derived>
         {
-            self().advance(val<-1>);
+            self().advance(val<iterator_facade_internal::diff_type<Derived> {-1}>);
             return self();
         }
 
@@ -111,7 +111,7 @@ namespace noctern {
             requires iterator_facade_internal::can_decrement<Derived>
         {
             Derived cpy = self();
-            self().advance(val<-1>);
+            --self();
             return cpy;
         }
 

@@ -6,10 +6,12 @@
 #include <functional>
 #include <optional>
 #include <string_view>
+#include <tuple>
 #include <utility>
 #include <vector>
 
 #include "noctern/enum.hpp"
+#include "noctern/iterator_facade.hpp"
 #include "noctern/meta.hpp"
 
 namespace noctern {
@@ -197,6 +199,70 @@ namespace noctern {
     // Holds references to the input string.
     class tokens {
     public:
+        friend class const_iterator;
+        class const_iterator : public iterator_facade<const_iterator> {
+            friend tokens;
+
+        public:
+            struct token_and_str {
+                noctern::token token;
+                std::string_view string_data;
+            };
+
+            constexpr const_iterator() = default;
+
+            token_and_str read() const {
+                noctern::token token = tokens_->tokens_[index_];
+
+                auto str_data = enum_switch(token,
+                    []<noctern::token token>(val_t<token>) -> std::optional<std::string_view> {
+                        using token_data_type = std::remove_cvref_t<decltype(token_data<token>)>;
+
+                        if constexpr (is_empty_data<token_data_type>) {
+                            return token_data_type::value;
+                        } else {
+                            return std::nullopt;
+                        }
+                    });
+                if (!str_data.has_value()) {
+                    str_data = tokens_->string_data_[string_data_index_];
+                }
+                return {token, *str_data};
+            }
+
+            template <ptrdiff_t N>
+                requires(N == 1 || N == -1)
+            void advance(val_t<N>) {
+                if constexpr (N == 1) {
+                    if (has_data(tokens_->tokens_[index_])) {
+                        ++string_data_index_;
+                    }
+                }
+                index_ += N;
+                if constexpr (N == -1) {
+                    if (has_data(tokens_->tokens_[index_])) {
+                        --string_data_index_;
+                    }
+                }
+            }
+
+            ptrdiff_t distance(const_iterator rhs) const {
+                return rhs.index_ - index_;
+            }
+
+        private:
+            explicit constexpr const_iterator(
+                const tokens* tokens, ptrdiff_t index, size_t string_data_index)
+                : tokens_(tokens)
+                , index_(index)
+                , string_data_index_(string_data_index) {
+            }
+
+            const tokens* tokens_ = nullptr;
+            ptrdiff_t index_ = 0;
+            size_t string_data_index_ = 0;
+        };
+
         class builder {
             friend class tokens;
 
@@ -233,6 +299,14 @@ namespace noctern {
             return tokens_.size();
         }
 
+        const_iterator begin() const {
+            return const_iterator(this, 0, 0);
+        }
+
+        const_iterator end() const {
+            return const_iterator(this, tokens_.size(), string_data_.size());
+        }
+
         // Runs a linear scan through the tokens, calling `fn` for each.
         //
         // `fn` is called like `fn(noctern::token{}, std::string_view{});`.
@@ -240,25 +314,8 @@ namespace noctern {
         // The `string_view` values live as long as the `tokens` object.
         template <typename Fn>
         void walk(Fn&& fn) const {
-            size_t string_data_index = 0;
-
-            for (const token token : tokens_) {
-                auto known_str = enum_switch(token,
-                    []<noctern::token token>(val_t<token>) -> std::optional<std::string_view> {
-                        using token_data_type = std::remove_cvref_t<decltype(token_data<token>)>;
-
-                        if constexpr (is_empty_data<token_data_type>) {
-                            return token_data_type::value;
-                        } else {
-                            return std::nullopt;
-                        }
-                    });
-                if (!known_str.has_value()) {
-                    known_str = string_data_[string_data_index];
-                    ++string_data_index;
-                }
-
-                std::invoke(fn, token, std::string_view(*known_str));
+            for (const const_iterator::token_and_str token : *this) {
+                std::invoke(fn, token.token, token.string_data);
             }
         }
 
@@ -276,6 +333,7 @@ namespace noctern {
         std::vector<token> tokens_;
         std::vector<std::string_view> string_data_;
     };
+    static_assert(std::bidirectional_iterator<tokens::const_iterator>);
 
     tokens tokenize_all(std::string_view input);
 }
