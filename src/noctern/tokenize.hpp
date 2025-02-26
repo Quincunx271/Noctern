@@ -54,8 +54,6 @@ namespace noctern {
             empty_invalid,
         };
 
-        NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(token)
-
     private:
         friend enum_mixin;
 

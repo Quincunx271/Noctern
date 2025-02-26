@@ -34,8 +34,6 @@ namespace noctern {
                 empty_invalid,
             };
 
-            NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(rule)
-
         private:
             friend enum_mixin;
 
