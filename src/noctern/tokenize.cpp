@@ -1,5 +1,6 @@
 #include "./tokenize.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace noctern {
