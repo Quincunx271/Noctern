@@ -36,6 +36,10 @@ namespace noctern {
     template <auto V>
     struct val_t {
         static constexpr auto value = V;
+
+        constexpr operator decltype(V)() const {
+            return value;
+        }
     };
 
     template <auto V>
