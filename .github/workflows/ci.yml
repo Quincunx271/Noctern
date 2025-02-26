@@ -31,12 +31,11 @@ jobs:
         nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Configure
-      run: nix-shell --run
-        cmake -S. -B${{ runner.workspace }}/build
+      run: nix-shell --run 'cmake -S. -B${{ runner.workspace }}/build
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=ON
+            -DNOCTERN_WARNINGS_AS_ERRORS=ON'
 
     - name: Build
       working-directory: ${{ runner.workspace }}/build
