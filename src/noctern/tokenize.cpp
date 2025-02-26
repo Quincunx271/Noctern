@@ -12,7 +12,7 @@ namespace noctern {
         concept has_defined_token_data = !std::same_as<token_data_t<token>, std::nullptr_t>;
 
         // Ensure that token_data<> is specialized for all tokens.
-        static_assert(all_tokens([]<token... tokens>(val_t<tokens>...) {
+        static_assert(enum_values(type<token>, []<token... tokens>(val_t<tokens>...) {
             static_assert((has_defined_token_data<tokens> && ...));
             return true;
         }));
@@ -20,7 +20,7 @@ namespace noctern {
         // Calls `fn(val<token>, token_data<token>)` once per empty token.
         template <typename Fn>
         constexpr void for_each_empty_token(Fn&& fn) {
-            all_tokens([&]<token... tokens>(val_t<tokens>...) {
+            enum_values(type<token>, [&]<token... tokens>(val_t<tokens>...) {
                 (
                     [&]<token token, typename Data>(val_t<token> val, Data data) {
                         if constexpr (is_empty_data<Data>) {
@@ -250,7 +250,7 @@ namespace noctern {
 
         while (!input.empty()) {
             auto next = static_cast<unsigned char>(input[0]);
-            token_switch(token_for_leading_char[next], [&]<token lex_next>(val_t<lex_next> val) {
+            enum_switch(token_for_leading_char[next], [&]<token lex_next>(val_t<lex_next> val) {
                 noctern::tokenize_at(val, input, builder);
             });
         }

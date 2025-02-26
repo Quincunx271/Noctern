@@ -22,7 +22,7 @@ namespace noctern {
         template <int N>
         void add_all(tokens::builder& builder, elaborated_token (&&tokens)[N]) {
             for (int i = 0; i < N; ++i) {
-                token_switch(tokens[i].token, [&]<token token>(val_t<token> t) {
+                enum_switch(tokens[i].token, [&]<token token>(val_t<token> t) {
                     if constexpr (has_data(token)) {
                         builder.add_token(t, tokens[i].value);
                     } else {

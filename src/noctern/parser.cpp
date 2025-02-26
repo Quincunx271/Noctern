@@ -5,16 +5,17 @@
 #include <iostream>
 #include <ostream>
 
+#include "noctern/enum.hpp"
+#include "noctern/meta.hpp"
+
 namespace noctern {
     namespace {
-        constexpr int max_token = all_tokens([]<token... tokens>(val_t<tokens>...) {
-            return std::max({static_cast<int>(tokens)...});
-        });
-
-        enum class rule : uint8_t {
-            // Ignored enum value. This is used to keep the `rule` enumeration values separate from
-            // the `token` values.
-            start_marker = max_token,
+        struct _rule_wrapper {
+            enum class rule : uint8_t {
+                // Ignored enum value. This is used to keep the `rule` enumeration values separate
+                // from
+                // the `token` values.
+                start_marker = enum_max(type<token>),
 #define NOCTERN_X_RULE(X)                                                                          \
     X(file) /*          ::= (list) fndef */                                                        \
     X(fndef) /*         ::= <fn_intro> <ident> <(> fn_params <)> <:> expr <;> */                   \
@@ -29,132 +30,123 @@ namespace noctern {
     X(div_mul_expr2) /*  ::= </> div_mul_expr | <*> div_mul_expr | */                              \
     X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
-            NOCTERN_X_RULE(NOCTERN_MAKE_ENUM_VALUE)
+                NOCTERN_X_RULE(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
 
-            // A sentinel value which doesn't need to be handled because it doesn't occur.
-            empty_invalid,
+                // A sentinel value which doesn't need to be handled because it doesn't occur.
+                empty_invalid,
+            };
+
+            NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(rule)
+
+        private:
+            friend enum_mixin;
+
+            template <typename Fn>
+            friend constexpr decltype(auto) switch_introspect(rule rule, Fn&& fn) {
+                switch (rule) {
+#define NOCTERN_RULE_INTROSPECT(name)                                                              \
+    case rule::name: {                                                                             \
+        constexpr std::string_view name_str = #name;                                               \
+        return std::invoke(std::forward<Fn>(fn), val<rule::name>, name_str);                       \
+    }
+                    NOCTERN_X_RULE(NOCTERN_RULE_INTROSPECT)
+#undef NOCTERN_RULE_INTROSPECT
+                case rule::start_marker: assert(false);
+                case rule::empty_invalid: assert(false);
+                }
+                assert(false);
+            }
+
+            template <typename Fn>
+            friend constexpr decltype(auto) introspect(type_t<rule>, Fn&& fn) {
+                using enum rule;
+                return std::invoke(std::forward<Fn>(fn)
+#define NOCTERN_RULE_TYPE(name) , val<name>
+                        NOCTERN_X_RULE(NOCTERN_RULE_TYPE)
+#undef NOCTERN_RULE_TYPE
+                );
+            }
+#undef NOCTERN_X_RULE
         };
 
-        template <typename Fn>
-        constexpr decltype(auto) all_rules(Fn&& fn) {
-            using enum rule;
-            return std::invoke(std::forward<Fn>(fn)
-#define NOCTERN_RULE_TYPE(name) , val<name>
-                    NOCTERN_X_RULE(NOCTERN_RULE_TYPE)
-#undef NOCTERN_RULE_TYPE
-            );
-        }
-
-        constexpr std::string_view stringify(rule rule) {
-            switch (rule) {
-#define NOCTERN_RULE_STR(name)                                                                     \
-    case rule::name: return #name;
-                NOCTERN_X_RULE(NOCTERN_RULE_STR)
-#undef NOCTERN_RULE_STR
-            // these cases should never happen.
-            case rule::start_marker: assert(false);
-            case rule::empty_invalid: assert(false);
-            }
-            assert(false);
-        }
-
-        template <typename Fn>
-        constexpr decltype(auto) rule_switch(rule rule, Fn&& fn) {
-            switch (rule) {
-#define NOCTERN_RULE_CASE(name)                                                                    \
-    case rule::name: return std::invoke(std::forward<Fn>(fn), val<rule::name>);
-                NOCTERN_X_RULE(NOCTERN_RULE_CASE)
-#undef NOCTERN_RULE_CASE
-            // these cases should never happen.
-            case rule::start_marker: assert(false);
-            case rule::empty_invalid: assert(false);
-            }
-            assert(false);
-        }
+        using rule = _rule_wrapper::rule;
 
         // Ensure that all rules are distinct from tokens.
-        static_assert(all_rules([]<rule... rules>(val_t<rules>...) {
-            return ((static_cast<int>(rules) > max_token) && ...);
-        }));
+        static_assert(enum_min(type<rule>) > enum_max(type<token>));
 
-        constexpr int max_rule = all_rules(
-            []<rule... rules>(val_t<rules>...) { return std::max({static_cast<int>(rules)...}); });
-
-        enum class action : uint8_t {
-            // Ignored enum value. This is used to keep the `action` enumeration values separate
-            // from
-            // the `rule` values.
-            start_marker = max_rule,
+        struct _action_wrapper {
+            enum class action : uint8_t {
+                // Ignored enum value. This is used to keep the `action` enumeration values separate
+                // from
+                // the `rule` values.
+                start_marker = enum_max(type<rule>),
 #define NOCTERN_X_ACTION(X)                                                                        \
     X(push_token)                                                                                  \
     X(push_token_and_pop)
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
-            NOCTERN_X_ACTION(NOCTERN_MAKE_ENUM_VALUE)
+                NOCTERN_X_ACTION(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
 
-            // A sentinel value.
-            empty_invalid,
+                // A sentinel value.
+                empty_invalid,
+            };
+
+            NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(action)
+
+        private:
+            friend enum_mixin;
+
+            template <typename Fn>
+            friend constexpr decltype(auto) switch_introspect(action action, Fn&& fn) {
+                switch (action) {
+#define NOCTERN_ACTION_INTROSPECT(name)                                                            \
+    case action::name: {                                                                           \
+        constexpr std::string_view name_str = #name;                                               \
+        return std::invoke(std::forward<Fn>(fn), val<action::name>, name_str);                     \
+    }
+                    NOCTERN_X_ACTION(NOCTERN_ACTION_INTROSPECT)
+#undef NOCTERN_ACTION_INTROSPECT
+                case action::start_marker: assert(false);
+                case action::empty_invalid: assert(false);
+                }
+                assert(false);
+            }
+
+            template <typename Fn>
+            friend constexpr decltype(auto) introspect(type_t<action>, Fn&& fn) {
+                using enum action;
+                return std::invoke(std::forward<Fn>(fn)
+#define NOCTERN_ACTION_TYPE(name) , val<name>
+                        NOCTERN_X_ACTION(NOCTERN_ACTION_TYPE)
+#undef NOCTERN_ACTION_TYPE
+                );
+            }
+#undef NOCTERN_X_ACTION
         };
 
-        template <typename Fn>
-        constexpr decltype(auto) all_actions(Fn&& fn) {
-            using enum action;
-            return std::invoke(std::forward<Fn>(fn)
-#define NOCTERN_ACTION_TYPE(name) , val<name>
-                    NOCTERN_X_ACTION(NOCTERN_ACTION_TYPE)
-#undef NOCTERN_ACTION_TYPE
-            );
-        }
-
-        constexpr std::string_view stringify(action action) {
-            switch (action) {
-#define NOCTERN_ACTION_STR(name)                                                                   \
-    case action::name: return #name;
-                NOCTERN_X_ACTION(NOCTERN_ACTION_STR)
-#undef NOCTERN_ACTION_STR
-            // these cases should never happen.
-            case action::start_marker: assert(false);
-            case action::empty_invalid: assert(false);
-            }
-            assert(false);
-        }
-
-        template <typename Fn>
-        constexpr decltype(auto) action_switch(action action, Fn&& fn) {
-            switch (action) {
-#define NOCTERN_ACTION_CASE(name)                                                                  \
-    case action::name: return std::invoke(std::forward<Fn>(fn), val<action::name>);
-                NOCTERN_X_ACTION(NOCTERN_ACTION_CASE)
-#undef NOCTERN_ACTION_CASE
-            // These cases should never happen.
-            case action::start_marker: assert(false);
-            case action::empty_invalid: assert(false);
-            }
-            assert(false);
-        }
+        using action = _action_wrapper::action;
 
         // Ensure that all actions are distinct from rules.
-        static_assert(all_actions([]<action... actions>(val_t<actions>...) {
-            return ((static_cast<int>(actions) > max_rule) && ...);
-        }));
+        static_assert(enum_min(type<action>) > enum_max(type<rule>));
         // Ensure that all actions are distinct from tokens.
-        static_assert(all_actions([]<action... actions>(val_t<actions>...) {
-            return ((static_cast<int>(actions) > max_token) && ...);
-        }));
+        static_assert(enum_min(type<action>) > enum_max(type<token>));
 
         class stack_op {
+            static constexpr int max_token = enum_max(type<noctern::token>);
+            static constexpr int max_rule = enum_max(type<noctern::rule>);
+
         public:
             explicit constexpr stack_op(noctern::token token)
-                : value_(static_cast<uint8_t>(token)) {
+                : value_(noctern::to_underlying(token)) {
             }
 
             explicit constexpr stack_op(noctern::rule rule)
-                : value_(static_cast<uint8_t>(rule)) {
+                : value_(noctern::to_underlying(rule)) {
             }
 
             explicit constexpr stack_op(noctern::action action)
-                : value_(static_cast<uint8_t>(action)) {
+                : value_(noctern::to_underlying(action)) {
             }
 
             // The token, else `token::empty_invalid` if it's not a token.
@@ -461,7 +453,7 @@ namespace noctern {
                     }
                 }
                 assert(next.rule() != rule::empty_invalid);
-                rule_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
+                enum_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
                     parse_at(top_rule, token_or_eof(token), value, builder);
                 });
             }
@@ -475,7 +467,7 @@ namespace noctern {
                 assert(false && "parse error");
             }
             assert(next.rule() != rule::empty_invalid);
-            rule_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
+            enum_switch(next.rule(), [&]<rule rule>(val_t<rule> top_rule) {
                 parse_at(top_rule, token_eof, "", builder);
             });
         }
@@ -491,5 +483,4 @@ namespace noctern {
 
         return parse_tree(std::move(builder));
     }
-
 }

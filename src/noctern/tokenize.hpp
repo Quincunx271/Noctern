@@ -9,10 +9,14 @@
 #include <utility>
 #include <vector>
 
+#include "noctern/enum.hpp"
+#include "noctern/meta.hpp"
+
 namespace noctern {
-    // The token identifier.
-    enum class token : uint8_t {
-    // X-macro for the meaningful enumeration values.
+    struct _token_wrapper {
+        // The token identifier.
+        enum class token : uint8_t {
+        // X-macro for the meaningful enumeration values.
 #define NOCTERN_X_TOKEN(X)                                                                         \
     X(invalid)                                                                                     \
     X(space)                                                                                       \
@@ -41,94 +45,41 @@ namespace noctern {
                                                                                                    \
     X(return_)
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
-        NOCTERN_X_TOKEN(NOCTERN_MAKE_ENUM_VALUE)
+            NOCTERN_X_TOKEN(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
 
-        // A sentinel which is "empty", but doesn't need to be handled (can't ever result).
-        empty_invalid,
-    };
+            // A sentinel which is "empty", but doesn't need to be handled (can't ever result).
+            empty_invalid,
+        };
 
-    // Converts a `token` to string.
-    // Okay to call via ADL.
-    constexpr inline std::string_view stringify(token token) {
-        switch (token) {
-#define NOCTERN_TOKEN_STR(name)                                                                    \
-    case token::name: return #name;
-            NOCTERN_X_TOKEN(NOCTERN_TOKEN_STR)
-#undef NOCTERN_TOKEN_STR
-        case token::empty_invalid: assert(false);
-        }
-        assert(false);
-    }
+        NOCTERN_ENUM_MAKE_MIXIN_FORWARDS(token)
 
-    // Allows string literals as template parameters.
-    template <size_t N>
-    class fixed_string {
-    public:
-        constexpr fixed_string(const char (&str)[N + 1]) {
-            for (size_t i = 0; i < N; ++i) {
-                _chars[i] = str[i];
+    private:
+        friend enum_mixin;
+
+        template <typename Fn>
+        friend constexpr decltype(auto) switch_introspect(token t, Fn&& fn) {
+            switch (t) {
+                using enum token;
+                NOCTERN_X_TOKEN(NOCTERN_ENUM_X_INTROSPECT)
+            case token::empty_invalid: assert(false);
             }
+            assert(false);
         }
 
-        constexpr operator std::string_view() const {
-            return std::string_view(_chars, N);
-        }
-
-        // Implementation detail; do not access.
-        char _chars[N + 1] = {}; // +1 for null terminator
-    };
-
-    template <size_t N>
-    fixed_string(const char (&arr)[N]) -> fixed_string<N - 1>; // Drop the null terminator
-
-    template <auto V>
-    struct val_t {
-        static constexpr auto value = V;
-    };
-
-    template <auto V>
-    inline constexpr auto val = val_t<V> {};
-
-    template <fixed_string S>
-    inline constexpr auto val<S> = val_t<S> {};
-
-    // Passes all the `token` enumeration values as arguments to `fn`.
-    template <typename Fn>
-    constexpr decltype(auto) all_tokens(Fn&& fn) {
-        using enum token;
-        return std::invoke(std::forward<Fn>(fn)
+        template <typename Fn>
+        friend constexpr decltype(auto) introspect(type_t<token>, Fn&& fn) {
+            using enum token;
+            return std::invoke(std::forward<Fn>(fn)
 #define NOCTERN_TOKEN_TYPE(name) , val<name>
-                NOCTERN_X_TOKEN(NOCTERN_TOKEN_TYPE)
+                    NOCTERN_X_TOKEN(NOCTERN_TOKEN_TYPE)
 #undef NOCTERN_TOKEN_TYPE
-        );
-    }
-
-    // Lifts a switch on `token` enumeration values into template parameters.
-    //
-    // In other words:
-    //
-    // ```
-    // switch (token) {
-    //   using enum noctern::token;
-    // case enum_value_1: return fn(val<enum_value_1>);
-    // // ...
-    // }
-    // ```
-    template <typename Fn>
-    constexpr decltype(auto) token_switch(token token, Fn&& fn) {
-        switch (token) {
-#define NOCTERN_TOKEN_CASE(name)                                                                   \
-    case token::name: return std::invoke(std::forward<Fn>(fn), val<token::name>);
-            NOCTERN_X_TOKEN(NOCTERN_TOKEN_CASE)
-#undef NOCTERN_TOKEN_CASE
-        // This case should never happen.
-        case token::empty_invalid: assert(false);
+            );
         }
-        assert(false);
-    }
-
 #undef NOCTERN_X_TOKEN
+    };
+
+    using token = _token_wrapper::token;
 
     ///////////////
     // "Data" definitions.
@@ -214,7 +165,7 @@ namespace noctern {
 
     // Whether there is runtime data associated with this `token` type.
     constexpr bool has_data(token token) {
-        return token_switch(token, []<noctern::token token>(val_t<token>) {
+        return enum_switch(token, []<noctern::token token>(val_t<token>) {
             return !is_empty_data<std::remove_cvref_t<decltype(token_data<token>)>>;
         });
     }
@@ -292,7 +243,7 @@ namespace noctern {
             size_t string_data_index = 0;
 
             for (const token token : tokens_) {
-                auto known_str = token_switch(token,
+                auto known_str = enum_switch(token,
                     []<noctern::token token>(val_t<token>) -> std::optional<std::string_view> {
                         using token_data_type = std::remove_cvref_t<decltype(token_data<token>)>;
 
