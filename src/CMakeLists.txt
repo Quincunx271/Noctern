@@ -7,6 +7,8 @@ set(werr ${NOCTERN_WARNINGS_AS_ERRORS})
 set(compile_options)
 set(link_options)
 
+set(fmtlib fmt::fmt)
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
   list(APPEND compile_options
     /permissive- /W4
@@ -34,6 +36,11 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
     -fsanitize=address
     -fsanitize=undefined
   )
+  if(NOCTERN_DEVELOPER_DEFAULTS)
+    # We get undefined references in CI otherwise.
+    # Use this workaround.
+    set(fmtlib fmt::fmt-header-only)
+  endif()
 endif()
 
 # Set up targets
@@ -55,7 +62,7 @@ target_compile_features(Noctern
 )
 target_link_libraries(Noctern
   PUBLIC
-    fmt::fmt
+    "${fmtlib}"
 )
 
 file(GLOB_RECURSE main_sources CONFIGURE_DEPENDS "*.main.cpp")
