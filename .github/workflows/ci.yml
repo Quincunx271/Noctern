@@ -17,18 +17,18 @@ jobs:
         build_type: [Debug, Release]
 
     steps:
-    - name: Print Configuration
-      run: |
-        ${{ matrix.cxx }} --version
-        echo std=c++${{ matrix.std }}
-        cmake --version
-
     - uses: actions/checkout@v4
 
     - uses: cachix/install-nix-action@v27
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
         nix_path: nixpkgs=channel:nixos-unstable
+
+    - name: Print Configuration
+      run: |
+        nix-shell --run '${{ matrix.cxx }} --version'
+        echo --std=c++${{ matrix.std }}
+        nix-shell --run 'cmake --version'
 
     - name: Configure
       run: nix-shell --run 'cmake -S. -B${{ runner.workspace }}/build
