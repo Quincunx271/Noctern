@@ -109,6 +109,27 @@ namespace noctern {
         template <typename Iter>
         using traits = std::iterator_traits<Iter>;
 
+        TEMPLATE_TEST_CASE("iterator_facade increment", "[motion]", one_shot_ints, forward_ints,
+            bidir_ints, rand_ints) {
+            TestType x(1);
+            TestType& r = ++x;
+            CHECK(&r == &x);
+            CHECK(*x == 2);
+            TestType cpy = x++;
+            CHECK(*cpy == 2);
+            CHECK(*x == 3);
+        }
+
+        TEMPLATE_TEST_CASE("iterator_facade decrement", "[motion]", bidir_ints, rand_ints) {
+            TestType x(1);
+            TestType& r = --x;
+            CHECK(&r == &x);
+            CHECK(*x == 0);
+            TestType cpy = x--;
+            CHECK(*cpy == 0);
+            CHECK(*x == -1);
+        }
+
         TEST_CASE("iterator_facade comparisons") {
             SECTION("equality") {
                 CHECK(one_shot_ints(1) == one_shot_ints(1));

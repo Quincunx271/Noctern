@@ -1,5 +1,6 @@
 #pragma once
 
+#include <concepts>
 #include <cstddef>
 #include <string_view>
 
@@ -39,6 +40,19 @@ namespace noctern {
 
         constexpr operator decltype(V)() const {
             return value;
+        }
+
+        template <typename ValK>
+        constexpr operator ValK() const
+            requires(requires(ValK v) {
+                // Is a `val_t<K>` specialization.
+                []<auto K>(val_t<K>) { }(v);
+                // With an implicit conversion from V to K types.
+                requires std::convertible_to<decltype(value), decltype(ValK::value)>;
+                // Where the values are equal.
+            } && value == ValK::value)
+        {
+            return ValK {};
         }
     };
 
