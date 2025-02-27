@@ -263,7 +263,7 @@ namespace noctern {
 
             void add_token(token_id token, token_index_t length) {
                 tokens_.push_back(token);
-                token_start_indices_.push_back(input_start_index_);
+                token_strs_.emplace_back(remaining_input_.substr(0, length));
                 input_start_index_ += length;
                 remaining_input_.remove_prefix(length);
             }
@@ -275,14 +275,13 @@ namespace noctern {
             token_index_t input_start_index_ = 0;
 
             std::vector<token_id> tokens_;
-            std::vector<token_index_t> token_start_indices_;
+            std::vector<std::string_view> token_strs_;
         };
 
         explicit tokens(builder builder)
             : input_file_(builder.input_file_)
             , tokens_(std::move(builder.tokens_))
-            , token_start_indices_(std::move(builder.token_start_indices_)) {
-            token_start_indices_.push_back(input_file_.size());
+            , token_strs_(std::move(builder.token_strs_)) {
         }
 
         size_t num_tokens() const {
@@ -297,13 +296,43 @@ namespace noctern {
             return const_iterator(this, tokens_.size());
         }
 
+        class extracted_data {
+            friend tokens;
+
+        public:
+            token_id id;
+
+        private:
+            std::string_view string;
+        };
+
+        extracted_data extract(const_iterator pos) {
+            extracted_data result;
+            result.id = std::exchange(tokens_[pos.index_], token_id::invalid);
+            result.string = token_strs_[pos.index_];
+            return result;
+        }
+
+        void store(const_iterator dest, extracted_data source) {
+            tokens_[dest.index_] = source.id;
+            token_strs_[dest.index_] = source.string;
+        }
+
+        void erase_to_end(const_iterator pos) {
+            tokens_.erase(tokens_.begin() + pos.index_, tokens_.end());
+            token_strs_.erase(token_strs_.begin() + pos.index_, token_strs_.end());
+        }
+
+        const_iterator to_iterator(token token) const {
+            return const_iterator(this, token.index_);
+        }
+
         token_id id(token token) const {
             return tokens_[token.index_];
         }
 
         std::string_view string(token token) const {
-            return input_file_.substr(token_start_indices_[token.index_],
-                token_start_indices_[token.index_ + 1] - token_start_indices_[token.index_]);
+            return token_strs_[token.index_];
         }
 
     private:
@@ -325,8 +354,7 @@ namespace noctern {
         // direct index into the source file. We can change this, but this is a slightly easier
         // initial representation.
 
-        // Indices for each token into `input_file_`, where that token begins.
-        std::vector<token_index_t> token_start_indices_;
+        std::vector<std::string_view> token_strs_;
     };
     static_assert(std::bidirectional_iterator<tokens::const_iterator>);
 

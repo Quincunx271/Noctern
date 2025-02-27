@@ -2,7 +2,6 @@
 
 #include <catch2/catch.hpp>
 #include <ostream>
-#include <span>
 #include <vector>
 
 #include "noctern/tokenize.test.hpp"
@@ -59,16 +58,14 @@ namespace noctern {
             };
         }
 
-        std::vector<elaborated_token> elaborate(
-            const noctern::tokens& input, std::span<const token> tokens) {
+        std::vector<elaborated_token> elaborate(const noctern::tokens& tokens) {
             std::vector<elaborated_token> result;
-            result.reserve(tokens.size());
 
             for (const token token : tokens) {
-                if (has_data(input.id(token))) {
-                    result.emplace_back(input.id(token), std::string(input.string(token)));
+                if (has_data(tokens.id(token))) {
+                    result.emplace_back(tokens.id(token), std::string(tokens.string(token)));
                 } else {
-                    result.emplace_back(input.id(token));
+                    result.emplace_back(tokens.id(token));
                 }
             }
 
@@ -118,9 +115,9 @@ namespace noctern {
                     statement_end,
                 });
 
-            noctern::parse_tree result = noctern::parse(tokens.tokens);
+            noctern::tokens result = noctern::parse(tokens.tokens);
 
-            CHECK_THAT(noctern::elaborate(tokens.tokens, result.tokens()),
+            CHECK_THAT(noctern::elaborate(result),
                 Catch::Matchers::Equals(std::vector<elaborated_token>({
                     fn_intro,
                     {ident, "silly_add"},
