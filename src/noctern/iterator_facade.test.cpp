@@ -9,12 +9,20 @@ namespace noctern {
             using iterator_category = std::input_iterator_tag;
             using difference_type = int;
 
+            explicit constexpr one_shot_ints(int n)
+                : value_(n) {
+            }
+
             constexpr int read() const {
                 return value_;
             }
 
             constexpr void advance(val_t<1>) {
                 ++value_;
+            }
+
+            constexpr bool equal_to(one_shot_ints rhs) const {
+                return value_ == rhs.value_;
             }
 
         private:
@@ -24,6 +32,11 @@ namespace noctern {
 
         class forward_ints : public iterator_facade<forward_ints> {
         public:
+            constexpr forward_ints() = default;
+            explicit constexpr forward_ints(int n)
+                : value_(n) {
+            }
+
             constexpr int read() const {
                 return value_;
             }
@@ -43,6 +56,11 @@ namespace noctern {
 
         class bidir_ints : public iterator_facade<bidir_ints> {
         public:
+            constexpr bidir_ints() = default;
+            explicit constexpr bidir_ints(int n)
+                : value_(n) {
+            }
+
             constexpr int read() const {
                 return value_;
             }
@@ -66,6 +84,11 @@ namespace noctern {
         public:
             using difference_type = int;
 
+            constexpr rand_ints() = default;
+            explicit constexpr rand_ints(int n)
+                : value_(n) {
+            }
+
             constexpr int read() const {
                 return value_;
             }
@@ -85,6 +108,23 @@ namespace noctern {
 
         template <typename Iter>
         using traits = std::iterator_traits<Iter>;
+
+        TEST_CASE("iterator_facade comparisons") {
+            SECTION("equality") {
+                CHECK(one_shot_ints(1) == one_shot_ints(1));
+                CHECK(one_shot_ints(1) != one_shot_ints(2));
+                CHECK(forward_ints(1) == forward_ints(1));
+                CHECK(forward_ints(1) != forward_ints(2));
+                CHECK(bidir_ints(1) == bidir_ints(1));
+                CHECK(bidir_ints(1) != bidir_ints(2));
+                CHECK(rand_ints(1) == rand_ints(1));
+                CHECK(rand_ints(1) != rand_ints(2));
+            }
+            SECTION("less than") {
+                CHECK_FALSE(rand_ints(1) < rand_ints(1));
+                CHECK(rand_ints(1) < rand_ints(2));
+            }
+        }
 
         TEST_CASE("std::iterator_traits<iterator_facade>") {
             SECTION("reference") {

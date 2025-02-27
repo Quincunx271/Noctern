@@ -155,7 +155,7 @@ namespace noctern {
         friend auto operator<=>(const Derived& lhs, const Derived& rhs)
             requires(iterator_facade_internal::can_compute_distance<Derived>)
         {
-            return lhs.distance(rhs) <=> 0;
+            return rhs.distance(lhs) <=> 0;
         }
 
     private:
