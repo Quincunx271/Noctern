@@ -18,29 +18,30 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
     -fsanitize=address
-    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
   )
   list(APPEND link_options
     -fsanitize=address
-    -fsanitize=undefined
   )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
     -fsanitize=address
-    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
   )
   list(APPEND link_options
     -fsanitize=address
-    -fsanitize=undefined
   )
   if(NOCTERN_DEVELOPER_DEFAULTS)
     # We get undefined references in CI otherwise.
     # Use this workaround.
     set(fmtlib fmt::fmt-header-only)
   endif()
+endif()
+
+if(NOCTERN_DEVELOPER_DEFAULTS)
+  add_compile_options(${compile_options})
+  add_link_options(${link_options})
 endif()
 
 # Set up targets
@@ -96,14 +97,6 @@ foreach(test_source IN LISTS test_sources)
     PRIVATE
       Noctern::Noctern
       catch_main
-  )
-  target_compile_options(test.${test_name}
-    PRIVATE
-      ${compile_options}
-  )
-  target_link_options(test.${test_name}
-    PRIVATE
-      ${link_options}
   )
 
   catch_discover_tests(test.${test_name}
