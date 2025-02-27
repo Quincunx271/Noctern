@@ -15,6 +15,8 @@
 #include "noctern/meta.hpp"
 
 namespace noctern {
+    using token_index_t = int32_t;
+
     struct _token_id_wrapper {
         // The token_id identifier.
         enum class token_id : uint8_t {
@@ -192,57 +194,44 @@ namespace noctern {
         token_id value;
     };
 
+    class token {
+        friend class tokens;
+
+    public:
+        constexpr token() = default;
+
+    private:
+        explicit constexpr token(token_index_t index)
+            : index_(index) {
+        }
+
+        token_index_t index_ = static_cast<token_index_t>(-1);
+    };
+
     // The result of calling `tokenize_all`.
     //
     // Holds references to the input string.
     class tokens {
+        static constexpr token make(token_index_t index) {
+            return token {index};
+        }
+
     public:
         friend class const_iterator;
         class const_iterator : public iterator_facade<const_iterator> {
             friend tokens;
 
         public:
-            struct token_and_str {
-                noctern::token_id token_id;
-                std::string_view string_data;
-            };
+            using difference_type = token_index_t;
 
             constexpr const_iterator() = default;
 
-            token_and_str read() const {
-                noctern::token_id token_id = tokens_->tokens_[index_];
-
-                auto str_data = enum_switch(token_id,
-                    []<noctern::token_id token_id>(
-                        val_t<token_id>) -> std::optional<std::string_view> {
-                        using token_data_type = std::remove_cvref_t<decltype(token_data<token_id>)>;
-
-                        if constexpr (is_empty_data<token_data_type>) {
-                            return token_data_type::value;
-                        } else {
-                            return std::nullopt;
-                        }
-                    });
-                if (!str_data.has_value()) {
-                    str_data = tokens_->string_data_[string_data_index_];
-                }
-                return {token_id, *str_data};
+            token read() const {
+                return make(index_);
             }
 
-            template <ptrdiff_t N>
-                requires(N == 1 || N == -1)
-            void advance(val_t<N>) {
-                if constexpr (N == 1) {
-                    if (has_data(tokens_->tokens_[index_])) {
-                        ++string_data_index_;
-                    }
-                }
-                index_ += N;
-                if constexpr (N == -1) {
-                    if (has_data(tokens_->tokens_[index_])) {
-                        --string_data_index_;
-                    }
-                }
+            void advance(token_index_t offset) {
+                index_ += offset;
             }
 
             ptrdiff_t distance(const_iterator rhs) const {
@@ -250,48 +239,50 @@ namespace noctern {
             }
 
         private:
-            explicit constexpr const_iterator(
-                const tokens* tokens, ptrdiff_t index, size_t string_data_index)
+            explicit constexpr const_iterator(const tokens* tokens, token_index_t index)
                 : tokens_(tokens)
-                , index_(index)
-                , string_data_index_(string_data_index) {
+                , index_(index) {
             }
 
             const tokens* tokens_ = nullptr;
-            ptrdiff_t index_ = 0;
-            size_t string_data_index_ = 0;
+            token_index_t index_ = 0;
         };
 
         class builder {
             friend class tokens;
 
         public:
-            void add_token(token_with_data token_id, std::string_view string_data) {
-                tokens_.push_back(token_id.value);
-                string_data_.push_back(string_data);
+            explicit constexpr builder(std::string_view input_file)
+                : remaining_input_(input_file)
+                , input_file_(input_file) {
             }
 
-            void add_token(token_without_data token_id) {
-                tokens_.push_back(token_id.value);
+            std::string_view remaining_input() const {
+                return remaining_input_;
             }
 
-            template <token_id V, typename... Args>
-            void add_token(val_t<V> token_id, Args... args) {
-                if constexpr (std::constructible_from<token_with_data, val_t<V>>) {
-                    add_token(token_with_data(token_id), args...);
-                } else {
-                    add_token(token_without_data(token_id), args...);
-                }
+            void add_token(token_id token, token_index_t length) {
+                tokens_.push_back(token);
+                token_start_indices_.push_back(input_start_index_);
+                input_start_index_ += length;
+                remaining_input_.remove_prefix(length);
             }
 
         private:
+            std::string_view remaining_input_;
+
+            std::string_view input_file_;
+            token_index_t input_start_index_ = 0;
+
             std::vector<token_id> tokens_;
-            std::vector<std::string_view> string_data_;
+            std::vector<token_index_t> token_start_indices_;
         };
 
         explicit tokens(builder builder)
-            : tokens_(std::move(builder.tokens_))
-            , string_data_(std::move(builder.string_data_)) {
+            : input_file_(builder.input_file_)
+            , tokens_(std::move(builder.tokens_))
+            , token_start_indices_(std::move(builder.token_start_indices_)) {
+            token_start_indices_.push_back(input_file_.size());
         }
 
         size_t num_tokens() const {
@@ -299,27 +290,26 @@ namespace noctern {
         }
 
         const_iterator begin() const {
-            return const_iterator(this, 0, 0);
+            return const_iterator(this, 0);
         }
 
         const_iterator end() const {
-            return const_iterator(this, tokens_.size(), string_data_.size());
+            return const_iterator(this, tokens_.size());
         }
 
-        // Runs a linear scan through the tokens, calling `fn` for each.
-        //
-        // `fn` is called like `fn(noctern::token_id{}, std::string_view{});`.
-        //
-        // The `string_view` values live as long as the `tokens` object.
-        template <typename Fn>
-        void walk(Fn&& fn) const {
-            for (const const_iterator::token_and_str token_id : *this) {
-                std::invoke(fn, token_id.token_id, token_id.string_data);
-            }
+        token_id id(token token) const {
+            return tokens_[token.index_];
+        }
+
+        std::string_view string(token token) const {
+            return input_file_.substr(token_start_indices_[token.index_],
+                token_start_indices_[token.index_ + 1] - token_start_indices_[token.index_]);
         }
 
     private:
         friend class builder;
+
+        std::string_view input_file_;
 
         // The parser only needs to work directly on the tokens. We organize memory to encourage
         // this.
@@ -330,7 +320,13 @@ namespace noctern {
         // original buffer. We could retokenize to determine the string value.
 
         std::vector<token_id> tokens_;
-        std::vector<std::string_view> string_data_;
+
+        // This representation is probably wrong: tokens are an incrementing index, rather than a
+        // direct index into the source file. We can change this, but this is a slightly easier
+        // initial representation.
+
+        // Indices for each token into `input_file_`, where that token begins.
+        std::vector<token_index_t> token_start_indices_;
     };
     static_assert(std::bidirectional_iterator<tokens::const_iterator>);
 

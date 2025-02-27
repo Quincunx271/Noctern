@@ -231,13 +231,14 @@ namespace noctern {
                 .name = "function definition stream",
                 .input = R"(def foobar(x, y): { let z = y; return z   + x + 0.2; })",
                 .expected = {token_id::fn_intro, token_id::space, token_id::ident, token_id::lparen,
-                    token_id::ident, token_id::comma, token_id::space, token_id::ident, token_id::rparen,
-                    token_id::fn_outro, token_id::space, token_id::lbrace, token_id::space, token_id::valdef_intro,
-                    token_id::space, token_id::ident, token_id::space, token_id::valdef_outro, token_id::space,
-                    token_id::ident, token_id::statement_end, token_id::space, token_id::return_, token_id::space,
-                    token_id::ident, token_id::space, token_id::plus, token_id::space, token_id::ident,
-                    token_id::space, token_id::plus, token_id::space, token_id::real_lit, token_id::statement_end,
-                    token_id::space, token_id::rbrace},
+                    token_id::ident, token_id::comma, token_id::space, token_id::ident,
+                    token_id::rparen, token_id::fn_outro, token_id::space, token_id::lbrace,
+                    token_id::space, token_id::valdef_intro, token_id::space, token_id::ident,
+                    token_id::space, token_id::valdef_outro, token_id::space, token_id::ident,
+                    token_id::statement_end, token_id::space, token_id::return_, token_id::space,
+                    token_id::ident, token_id::space, token_id::plus, token_id::space,
+                    token_id::ident, token_id::space, token_id::plus, token_id::space,
+                    token_id::real_lit, token_id::statement_end, token_id::space, token_id::rbrace},
                 .expected_str_data = {"def", " ", "foobar", "(", "x", ",", " ", "y", ")", ":", " ",
                     "{", " ", "let", " ", "z", " ", "=", " ", "y", ";", " ", "return", " ", "z",
                     "   ", "+", " ", "x", " ", "+", " ", "0.2", ";", " ", "}"},
@@ -249,10 +250,10 @@ namespace noctern {
 
                     std::vector<token_id> actual;
                     std::vector<std::string> actual_str_data;
-                    tokens.walk([&](token_id token_id, std::string_view str_data) {
-                        actual.push_back(token_id);
-                        actual_str_data.emplace_back(str_data);
-                    });
+                    for (const token token : tokens) {
+                        actual.push_back(tokens.id(token));
+                        actual_str_data.emplace_back(tokens.string(token));
+                    }
 
                     CHECK(actual == test_case.expected);
                     CHECK(actual_str_data == test_case.expected_str_data);

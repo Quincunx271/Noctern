@@ -152,8 +152,7 @@ namespace noctern {
             postorder_.reserve(size_hint);
         }
 
-        std::vector<token_id> postorder_;
-        std::vector<std::string_view> string_data_;
+        std::vector<token> postorder_;
     };
 
     parse_tree::parse_tree(builder builder)
@@ -164,11 +163,12 @@ namespace noctern {
         using token_view = std::ranges::subrange<tokens::const_iterator>;
 
         struct parser {
+            const noctern::tokens& input;
             token_view tokens;
             parse_tree::builder builder;
 
             auto advance_token(token_id token_id) {
-                if (tokens.empty() || tokens.front().token_id != token_id) {
+                if (tokens.empty() || input.id(tokens.front()) != token_id) {
                     assert(false && "parse error");
                 }
                 auto it = tokens.front();
@@ -176,15 +176,13 @@ namespace noctern {
                 return it;
             }
 
-            auto push_token(tokens::const_iterator::token_and_str data) {
-                builder.postorder_.push_back(data.token_id);
-                builder.string_data_.push_back(data.string_data);
+            auto push_token(token data) {
+                builder.postorder_.push_back(data);
             }
 
             void parse_at(val_t<rule::file>) {
                 while (!tokens.empty()) {
-                    const auto token_and_str = tokens.front();
-                    const token_id token_id = token_and_str.token_id;
+                    const token_id token_id = input.id(tokens.front());
                     if (token_id == token_id::fn_intro) {
                         parse_at(val<rule::fndef>);
                     } else {
@@ -195,26 +193,26 @@ namespace noctern {
             }
 
             void parse_at(val_t<rule::fndef>) {
-                builder.postorder_.push_back(advance_token(token_id::fn_intro).token_id);
+                push_token(advance_token(token_id::fn_intro));
                 push_token(advance_token(token_id::ident));
                 advance_token(token_id::lparen);
 
                 parse_at(val<rule::fn_params>);
 
-                builder.postorder_.push_back(advance_token(token_id::rparen).token_id);
+                push_token(advance_token(token_id::rparen));
                 advance_token(token_id::fn_outro);
 
                 parse_at(val<rule::expr>);
 
-                builder.postorder_.push_back(advance_token(token_id::statement_end).token_id);
+                push_token(advance_token(token_id::statement_end));
             }
 
             void parse_at(val_t<rule::fn_params>) {
-                while (!tokens.empty() && tokens.front().token_id != token_id::rparen) {
+                while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                     push_token(advance_token(token_id::ident));
 
-                    if (!tokens.empty() && tokens.front().token_id != token_id::rparen) {
-                        if (tokens.front().token_id != token_id::comma) {
+                    if (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
+                        if (input.id(tokens.front()) != token_id::comma) {
                             assert(false && "expected comma");
                         }
                         tokens.advance(1);
@@ -230,7 +228,7 @@ namespace noctern {
                     // ERROR!
                     assert(false && "parse error");
                 }
-                token_id token_id = tokens.front().token_id;
+                token_id token_id = input.id(tokens.front());
                 if (token_id == token_id::lbrace) {
                     parse_at(val<rule::block>);
                 } else if (token_id == token_id::int_lit || token_id == token_id::real_lit
@@ -243,31 +241,31 @@ namespace noctern {
             }
 
             void parse_at(val_t<rule::block>) {
-                builder.postorder_.push_back(advance_token(token_id::lbrace).token_id);
+                push_token(advance_token(token_id::lbrace));
 
-                while (!tokens.empty() && tokens.front().token_id != token_id::return_) {
+                while (!tokens.empty() && input.id(tokens.front()) != token_id::return_) {
                     parse_at(val<rule::valdecl>);
                 }
 
                 parse_at(val<rule::return_>);
 
-                builder.postorder_.push_back(advance_token(token_id::rbrace).token_id);
+                push_token(advance_token(token_id::rbrace));
             }
 
             void parse_at(val_t<rule::return_>) {
-                builder.postorder_.push_back(advance_token(token_id::return_).token_id);
+                push_token(advance_token(token_id::return_));
                 parse_at(val<rule::expr>);
-                builder.postorder_.emplace_back(advance_token(token_id::statement_end).token_id);
+                builder.postorder_.emplace_back(advance_token(token_id::statement_end));
             }
 
             void parse_at(val_t<rule::valdecl>) {
-                builder.postorder_.push_back(advance_token(token_id::valdef_intro).token_id);
+                push_token(advance_token(token_id::valdef_intro));
                 push_token(advance_token(token_id::ident));
                 advance_token(token_id::valdef_outro);
 
                 parse_at(val<rule::expr>);
 
-                builder.postorder_.push_back(advance_token(token_id::statement_end).token_id);
+                push_token(advance_token(token_id::statement_end));
             }
 
             void parse_at(val_t<rule::add_sub_expr>) {
@@ -281,12 +279,13 @@ namespace noctern {
                     // Okay!
                     return;
                 }
-                token_id token_id = tokens.front().token_id;
+                token token = tokens.front();
+                token_id token_id = input.id(token);
                 if (token_id == token_id::plus || token_id == token_id::minus) {
                     tokens.advance(1);
                     parse_at(val<rule::expr>);
 
-                    builder.postorder_.push_back(token_id);
+                    push_token(token);
                 }
             }
 
@@ -300,12 +299,13 @@ namespace noctern {
                     // Okay!
                     return;
                 }
-                token_id token_id = tokens.front().token_id;
+                token token = tokens.front();
+                token_id token_id = input.id(token);
                 if (token_id == token_id::div || token_id == token_id::mult) {
                     tokens.advance(1);
                     parse_at(val<rule::div_mul_expr>);
 
-                    builder.postorder_.push_back(token_id);
+                    push_token(token);
                 }
             }
 
@@ -314,7 +314,8 @@ namespace noctern {
                     // Error!
                     assert(false && "parse error");
                 }
-                token_id token_id = tokens.front().token_id;
+                token token = tokens.front();
+                token_id token_id = input.id(token);
                 if (token_id == token_id::lparen) {
                     tokens.advance(1);
                     parse_at(val<rule::expr>);
@@ -332,7 +333,9 @@ namespace noctern {
     }
 
     parse_tree parse(const tokens& input) {
-        parser parser;
+        parser parser {
+            .input = input,
+        };
         parser.builder.reserve(input.num_tokens());
         parser.tokens = token_view(input.begin(), input.end());
 

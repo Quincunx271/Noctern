@@ -14,12 +14,13 @@ int main() {
 
     noctern::tokens tokens = noctern::tokenize_all(input);
 
-    tokens.walk([](noctern::token_id token_id, std::string_view str_data) {
-        if (token_id == noctern::token_id::space) return;
-        if (noctern::has_data(token_id)) {
-            fmt::println("<{}: {}>", stringify(token_id), str_data);
+    for (noctern::token token : tokens) {
+        noctern::token_id id = tokens.id(token);
+        if (id == noctern::token_id::space) continue;
+        if (noctern::has_data(id)) {
+            fmt::println("<{}: {}>", stringify(id), tokens.string(token));
         } else {
-            fmt::println("<{}>", stringify(token_id));
+            fmt::println("<{}>", stringify(id));
         }
-    });
+    }
 }
