@@ -16,9 +16,16 @@ namespace noctern {
         }
     }
 
-    double interpreter::eval_fn(const tokens& source, token from) const {
-        frame frame;
+    double interpreter::eval_fn(const tokens& source, token from, frame arguments) const {
+        frame frame = std::move(arguments);
         auto pos = source.to_iterator(from);
+
+        while (source.id(*pos) != token_id::rparen) {
+            assert(source.id(*pos) == token_id::ident);
+            assert(frame.locals.contains(source.string(*pos)));
+            ++pos;
+        }
+        ++pos;
 
         token_id id = source.id(*pos);
         if (id == token_id::lbrace) {
@@ -34,10 +41,14 @@ namespace noctern {
         ++pos;
 
         while (source.id(*pos) == token_id::valdef_intro) {
+            ++pos;
+            assert(source.id(*pos) == token_id::ident);
             const token ident = *pos;
             ++pos;
 
-            frame.locals[source.string(ident)] = eval_expr(source, frame, pos);
+            double result = eval_expr(source, frame, pos);
+            // Only insert after `eval_expr`, to avoid reading an undefined variable.
+            frame.locals[source.string(ident)] = result;
         }
 
         assert(source.id(*pos) == token_id::return_);

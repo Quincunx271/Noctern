@@ -21,7 +21,7 @@ namespace noctern {
             : table_(std::move(table)) {
         }
 
-        double eval_fn(const tokens& source, token from) const;
+        double eval_fn(const tokens& source, token from, frame arguments) const;
 
     private:
         double eval_block(const tokens& source, frame& frame, tokens::const_iterator& pos) const;

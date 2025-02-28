@@ -8,7 +8,7 @@
 namespace noctern {
     class compilation_unit {
     public:
-        explicit compilation_unit(const tokens& input, std::span<const token> postorder);
+        explicit compilation_unit(const tokens& input);
 
         std::span<const token> fn_defs() const {
             return fn_defs_;
