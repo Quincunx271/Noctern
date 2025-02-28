@@ -1,0 +1,6 @@
+def Main(): {
+    let x = 3;
+    let y = 4;
+    let z = y - 0.2;
+    return y + z  + x * 2. - 2 + .1;
+};
