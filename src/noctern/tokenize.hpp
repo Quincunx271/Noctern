@@ -268,6 +268,11 @@ namespace noctern {
                 remaining_input_.remove_prefix(length);
             }
 
+            void add_ignored_token(token_index_t length) {
+                input_start_index_ += length;
+                remaining_input_.remove_prefix(length);
+            }
+
         private:
             std::string_view remaining_input_;
 
@@ -359,4 +364,6 @@ namespace noctern {
     static_assert(std::bidirectional_iterator<tokens::const_iterator>);
 
     tokens tokenize_all(std::string_view input);
+
+    tokens tokenize_all_keeping_spaces(std::string_view input);
 }

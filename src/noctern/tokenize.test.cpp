@@ -1,5 +1,7 @@
 #include "./tokenize.hpp"
 
+#include <algorithm>
+#include <ranges>
 #include <string>
 
 #include <catch2/catch.hpp>
@@ -9,6 +11,13 @@
 namespace noctern {
     namespace {
         using namespace std::literals;
+
+        template <typename Range>
+            requires std::ranges::input_range<Range>
+        std::vector<std::ranges::range_value_t<Range>> to_vector(Range&& range) {
+            return std::vector<std::ranges::range_value_t<Range>>(
+                std::ranges::begin(range), std::ranges::end(range));
+        }
 
         struct test_case {
             std::string name;
@@ -247,6 +256,28 @@ namespace noctern {
             for (const test_case& test_case : test_cases) {
                 SECTION(test_case.name) {
                     tokens tokens = tokenize_all(test_case.input);
+
+                    std::vector<token_id> actual;
+                    std::vector<std::string> actual_str_data;
+                    for (const token token : tokens) {
+                        actual.push_back(tokens.id(token));
+                        actual_str_data.emplace_back(tokens.string(token));
+                    }
+
+                    std::vector<token_id> expected_ids(to_vector(std::ranges::filter_view(
+                        test_case.expected, [](token_id id) { return id != token_id::space; })));
+                    std::vector<std::string> expected_str_data(to_vector(
+                        std::ranges::zip_view(test_case.expected, test_case.expected_str_data)
+                        | std::ranges::views::filter(
+                            [](const auto& token) { return std::get<0>(token) != token_id::space; })
+                        | std::ranges::views::transform(
+                            [](const auto& token) { return std::get<1>(token); })));
+
+                    CHECK(actual == expected_ids);
+                    CHECK(actual_str_data == expected_str_data);
+                }
+                SECTION(test_case.name + " with spaces") {
+                    tokens tokens = tokenize_all_keeping_spaces(test_case.input);
 
                     std::vector<token_id> actual;
                     std::vector<std::string> actual_str_data;

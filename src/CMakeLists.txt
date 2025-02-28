@@ -59,7 +59,7 @@ target_include_directories(Noctern
 )
 target_compile_features(Noctern
   PUBLIC
-    cxx_std_20
+    cxx_std_23
 )
 target_link_libraries(Noctern
   PUBLIC
