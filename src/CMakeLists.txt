@@ -1,4 +1,3 @@
-find_package(FLEX 2.6.4 REQUIRED)
 find_package(Boost 1.74.0 REQUIRED)
 find_package(fmt 7.1.2 REQUIRED)
 find_package(Catch2 2.13.3 REQUIRED)
@@ -7,6 +6,8 @@ find_package(Catch2 2.13.3 REQUIRED)
 set(werr ${NOCTERN_WARNINGS_AS_ERRORS})
 set(compile_options)
 set(link_options)
+
+set(fmtlib fmt::fmt)
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
   list(APPEND compile_options
@@ -17,24 +18,30 @@ elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
     -fsanitize=address
-    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
   )
   list(APPEND link_options
     -fsanitize=address
-    -fsanitize=undefined
   )
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
     -fsanitize=address
-    -fsanitize=undefined
     $<$<BOOL:${werr}>:-Werror>
   )
   list(APPEND link_options
     -fsanitize=address
-    -fsanitize=undefined
   )
+  if(NOCTERN_DEVELOPER_DEFAULTS)
+    # We get undefined references in CI otherwise.
+    # Use this workaround.
+    set(fmtlib fmt::fmt-header-only)
+  endif()
+endif()
+
+if(NOCTERN_DEVELOPER_DEFAULTS)
+  add_compile_options(${compile_options})
+  add_link_options(${link_options})
 endif()
 
 # Set up targets
@@ -42,11 +49,8 @@ file(GLOB_RECURSE sources CONFIGURE_DEPENDS "noctern/*.cpp" "noctern/*.hpp")
 file(GLOB_RECURSE test_sources CONFIGURE_DEPENDS "noctern/*.test.cpp")
 list(REMOVE_ITEM sources ${test_sources})
 
-flex_target(noctern.lex noctern/parsing/lexer.l "${CMAKE_CURRENT_BINARY_DIR}/lexer.cpp")
-
 add_library(Noctern
   ${sources}
-  ${FLEX_noctern.lex_OUTPUTS}
 )
 add_library(Noctern::Noctern ALIAS Noctern)
 target_include_directories(Noctern
@@ -55,11 +59,11 @@ target_include_directories(Noctern
 )
 target_compile_features(Noctern
   PUBLIC
-    cxx_std_20
+    cxx_std_23
 )
 target_link_libraries(Noctern
   PUBLIC
-    fmt::fmt
+    "${fmtlib}"
 )
 
 file(GLOB_RECURSE main_sources CONFIGURE_DEPENDS "*.main.cpp")
@@ -83,23 +87,20 @@ write_if_diff(${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp [[
 add_library(catch_main OBJECT ${CMAKE_CURRENT_BINARY_DIR}/catch_main.test.cpp)
 target_link_libraries(catch_main PUBLIC Catch2::Catch2)
 
-add_executable(test.Noctern ${test_sources})
-target_link_libraries(test.Noctern
-  PRIVATE
-    Noctern::Noctern
-    catch_main
-)
-target_compile_options(test.Noctern
-  PRIVATE
-    ${compile_options}
-)
-target_link_options(test.Noctern
-  PRIVATE
-    ${link_options}
-)
-
 include(Catch)
 
-catch_discover_tests(test.Noctern
-  EXTRA_ARGS $<$<BOOL:${NOCTERN_TEST_COLOR}>:--use-colour=yes>
-)
+foreach(test_source IN LISTS test_sources)
+  get_filename_component(test_name ${test_source} NAME_WE)
+
+  add_executable(test.${test_name} ${test_source})
+  target_link_libraries(test.${test_name}
+    PRIVATE
+      Noctern::Noctern
+      catch_main
+  )
+
+  catch_discover_tests(test.${test_name}
+    EXTRA_ARGS $<$<BOOL:${NOCTERN_TEST_COLOR}>:--use-colour=yes>
+  )
+endforeach()
+

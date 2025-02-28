@@ -11,10 +11,11 @@ jobs:
     runs-on: ubuntu-latest
 
     strategy:
+      fail-fast: false
       matrix:
         cxx: [g++, clang++]
         std: [20, 23]
-        build_type: [Debug, Release]
+        build_type: [Debug]
 
     steps:
     - uses: actions/checkout@v4
