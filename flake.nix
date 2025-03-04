@@ -26,10 +26,7 @@
         );
       libraries =
         pkgs: with pkgs; [
-          spdlog
           fmt
-          boost
-          flex
           catch2
         ];
     in
@@ -37,7 +34,7 @@
       devShells = forEachSystem (
         { pkgs }:
         {
-          gcc13 = pkgs.mkShell {
+          default = pkgs.mkShell {
             packages =
               with pkgs;
               [
@@ -45,37 +42,13 @@
                 gcc13
                 ninja
                 llvmPackages_19.clang-tools
-
-                gdb
-              ]
-              ++ libraries pkgs;
-
-            shellHook = ''
-              export CC=gcc
-              export CXX=g++
-
-              $CXX --version
-            '';
-          };
-          clang19 = pkgs.mkShell {
-            packages =
-              with pkgs;
-              [
-                cmake
                 llvmPackages_19.clangUseLLVM
-                ninja
-                llvmPackages_19.clang-tools
+
+                ccache
 
                 gdb
               ]
               ++ libraries pkgs;
-
-            shellHook = ''
-              export CC=clang
-              export CXX=clang++
-
-              $CXX --version
-            '';
           };
         }
       );

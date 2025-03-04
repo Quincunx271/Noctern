@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        flake-shell: [gcc13]
+        compiler: [g++]
         std: [23]
         build_type: [Debug]
         warnings_as_errors: [false, true]
@@ -27,20 +27,25 @@ jobs:
 
     - name: Install packages
       # nix caches packages, so this will do the installs.
-      run: nix develop .#${{ matrix.flake-shell }}
+      run: nix develop
+
+    - name: ccache
+      uses: hendrikmuhs/ccache-action@v1.2
 
     - name: Configure
-      run: nix develop .#${{ matrix.flake-shell }} --command
+      run: nix develop --command
             cmake -S. -B${{ runner.workspace }}/build
             -GNinja
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
             -DNOCTERN_WARNINGS_AS_ERRORS=${{ matrix.warnings_as_errors }}
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
 
     - name: Build
-      run: nix develop .#${{ matrix.flake-shell }} --command
+      run: nix develop --command
             cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}
 
     - name: Run Tests
-      run: nix develop .#${{ matrix.flake-shell }} --command
+      run: nix develop --command
             ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV
