@@ -22,10 +22,14 @@ namespace noctern {
                 assert(has_data(token_id));
             }
 
-            friend bool operator==(const elaborated_token& lhs, const elaborated_token& rhs)
+            [[maybe_unused]] // Silence unused warnings.
+            friend bool
+            operator==(const elaborated_token& lhs, const elaborated_token& rhs)
                 = default;
 
-            friend std::ostream& operator<<(std::ostream& out, const elaborated_token& token) {
+            [[maybe_unused]] // Silence unused warnings.
+            friend std::ostream&
+            operator<<(std::ostream& out, const elaborated_token& token) {
                 out << "<" << stringify(token.token_id);
                 if (!token.value.empty()) {
                     out << ": " << token.value;

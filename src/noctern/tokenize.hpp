@@ -239,12 +239,10 @@ namespace noctern {
             }
 
         private:
-            explicit constexpr const_iterator(const tokens* tokens, token_index_t index)
-                : tokens_(tokens)
-                , index_(index) {
+            explicit constexpr const_iterator(token_index_t index)
+                : index_(index) {
             }
 
-            const tokens* tokens_ = nullptr;
             token_index_t index_ = 0;
         };
 
@@ -294,11 +292,11 @@ namespace noctern {
         }
 
         const_iterator begin() const {
-            return const_iterator(this, 0);
+            return const_iterator(0);
         }
 
         const_iterator end() const {
-            return const_iterator(this, tokens_.size());
+            return const_iterator(tokens_.size());
         }
 
         class extracted_data {
@@ -329,7 +327,7 @@ namespace noctern {
         }
 
         const_iterator to_iterator(token token) const {
-            return const_iterator(this, token.index_);
+            return const_iterator(token.index_);
         }
 
         token_id id(token token) const {
