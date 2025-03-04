@@ -56,5 +56,5 @@ jobs:
       if: success() || failure()
       with:
         name: Test Results for ${{ matrix.preset }}
-        path: ${{ runner.workspace }}/build/${{ matrix.preset }}/test-results.xml
+        path: build/${{ matrix.preset }}/test-results.xml
         reporter: java-junit
