@@ -16,15 +16,15 @@ jobs:
         compiler: [g++]
         std: [23]
         build_type: [Debug]
-        warnings_as_errors: [false, true]
+        warnings_as_errors: [WARNINGS_AS_ERRORS=OFF WARNINGS_AS_ERRORS=ON]
         sanitizer: ['']
 
         include:
-          - compiler: [g++]
-            std: [23]
-            build_type: [Debug]
-            sanitizer: [-fsanitize=address]
-            warnings_as_errors: [false]
+          - compiler: g++
+            std: 23
+            build_type: Debug
+            sanitizer: -fsanitize=address
+            warnings_as_errors: WARNINGS_AS_ERRORS=OFF
 
     steps:
     - uses: actions/checkout@v4
@@ -48,7 +48,7 @@ jobs:
             -GNinja
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=${{ matrix.warnings_as_errors }}
+            -DNOCTERN_${{ matrix.warnings_as_errors }}
             -DCMAKE_C_COMPILER_LAUNCHER=ccache
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
             -DCMAKE_CXX_FLAGS_INIT='${{ matrix.sanitizer }}'
