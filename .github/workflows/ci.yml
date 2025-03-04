@@ -17,6 +17,14 @@ jobs:
         std: [23]
         build_type: [Debug]
         warnings_as_errors: [false, true]
+        sanitizer: ['']
+
+        include:
+          - compiler: [g++]
+            std: [23]
+            build_type: [Debug]
+            sanitizer: [address]
+            warnings_as_errors: [false]
 
     steps:
     - uses: actions/checkout@v4
@@ -31,6 +39,8 @@ jobs:
 
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
+      with:
+        key: ci-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.sanitizer }}
 
     - name: Configure
       run: nix develop --command
@@ -41,6 +51,10 @@ jobs:
             -DNOCTERN_WARNINGS_AS_ERRORS=${{ matrix.warnings_as_errors }}
             -DCMAKE_C_COMPILER_LAUNCHER=ccache
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
+            -DCMAKE_CXX_FLAGS_INIT='-fsanitize=${{ matrix.sanitizer }}'
+            -DCMAKE_EXE_FLAGS_INIT='-fsanitize=${{ matrix.sanitizer }}'
+            -DCMAKE_STATIC_FLAGS_INIT='-fsanitize=${{ matrix.sanitizer }}'
+            -DCMAKE_SHARED_FLAGS_INIT='-fsanitize=${{ matrix.sanitizer }}'
 
     - name: Build
       run: nix develop --command
