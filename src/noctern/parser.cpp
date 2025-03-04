@@ -72,7 +72,10 @@ namespace noctern {
             tokens::const_iterator out;
 
             auto advance_token(token_id token_id) {
-                if (tokens.empty() || input.id(tokens.front()) != token_id) {
+                if (tokens.empty()) {
+                    assert(false && "parse error");
+                }
+                if (input.id(tokens.front()) != token_id) {
                     assert(false && "parse error");
                 }
                 auto it = input.extract(tokens.begin());
@@ -227,8 +230,7 @@ namespace noctern {
                 }
                 token_id token_id = input.id(tokens.front());
                 if (token_id == token_id::lparen) {
-                    push_token(advance_token(token_id));
-                    push_token(advance_token(token_id::ident));
+                    push_token(advance_token(token_id::lparen));
 
                     while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                         parse_at(val<rule::expr>);

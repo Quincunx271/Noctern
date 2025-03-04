@@ -7,10 +7,7 @@
     "configurePresets": [
         {
             "name": "default",
-            "inherits": "gcc-debug",
-            "cacheVariables": {
-                "NOCTERN_TEST_COLOR": "ON"
-            }
+            "inherits": "gcc-debug"
         },
         {
             "name": "gcc-debug",
