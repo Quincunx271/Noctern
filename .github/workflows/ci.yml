@@ -14,11 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         preset: [gcc-debug, clang-debug, gcc-asan]
-        warnings_as_errors: [WARNINGS_AS_ERRORS=OFF, WARNINGS_AS_ERRORS=ON]
+        warnings_as_errors: ['', -DNOCTERN_WARNINGS_AS_ERRORS=ON]
 
         exclude:
           - preset: gcc-asan
-            warnings_as_errors: WARNINGS_AS_ERRORS=ON
+            warnings_as_errors: -DNOCTERN_WARNINGS_AS_ERRORS=ON
 
     steps:
     - uses: actions/checkout@v4
@@ -43,7 +43,7 @@ jobs:
     - name: Configure
       run: nix develop --command
             cmake -S. --preset ${{ matrix.preset }}
-            -DNOCTERN_${{ matrix.warnings_as_errors }}
+            ${{ matrix.warnings_as_errors }}
 
     - name: Build
       run: nix develop --command cmake --build --preset ${{ matrix.preset }}
