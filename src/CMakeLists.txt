@@ -1,4 +1,3 @@
-find_package(Boost 1.74.0 REQUIRED)
 find_package(fmt 7.1.2 REQUIRED)
 find_package(Catch2 2.13.3 REQUIRED)
 
@@ -17,32 +16,19 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL MSVC)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL GNU)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
-    -fsanitize=address
     $<$<BOOL:${werr}>:-Werror>
   )
-  list(APPEND link_options
-    -fsanitize=address
-  )
+  list(APPEND link_options)
 elseif(CMAKE_CXX_COMPILER_ID STREQUAL Clang)
   list(APPEND compile_options
     -Wall -Wextra -Wpedantic
-    -fsanitize=address
     $<$<BOOL:${werr}>:-Werror>
   )
-  list(APPEND link_options
-    -fsanitize=address
-  )
-  if(NOCTERN_DEVELOPER_DEFAULTS)
-    # We get undefined references in CI otherwise.
-    # Use this workaround.
-    set(fmtlib fmt::fmt-header-only)
-  endif()
+  list(APPEND link_options)
 endif()
 
-if(NOCTERN_DEVELOPER_DEFAULTS)
-  add_compile_options(${compile_options})
-  add_link_options(${link_options})
-endif()
+add_compile_options(${compile_options})
+add_link_options(${link_options})
 
 # Set up targets
 file(GLOB_RECURSE sources CONFIGURE_DEPENDS "noctern/*.cpp" "noctern/*.hpp")

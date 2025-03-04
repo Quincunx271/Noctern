@@ -109,7 +109,8 @@ namespace noctern {
                 .locals = {
                     {"x", x},
                     {"y", y},
-                }
+                },
+                .expr_stack = {},
             }) == y + (y - 0.2) + x * 2. - 2 + .1);
         }
     }

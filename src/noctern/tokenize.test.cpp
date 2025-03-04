@@ -235,7 +235,6 @@ namespace noctern {
             std::ranges::sort(test_cases, std::ranges::less {},
                 [](const test_case test_case) { return test_case.name; });
 
-            test_cases.clear();
             test_cases.push_back({
                 .name = "function definition stream",
                 .input = R"(def foobar(x, y): { let z = y; return z   + x + 0.2; })",
