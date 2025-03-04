@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++]
+        compiler: [g++, clang++]
         std: [23]
         build_type: [Debug]
         warnings_as_errors: [WARNINGS_AS_ERRORS=OFF, WARNINGS_AS_ERRORS=ON]
@@ -46,6 +46,7 @@ jobs:
       run: nix develop --command
             cmake -S. -B${{ runner.workspace }}/build
             -GNinja
+            -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
             -DNOCTERN_${{ matrix.warnings_as_errors }}
