@@ -63,3 +63,12 @@ jobs:
     - name: Run Tests
       run: nix develop --command
             ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV
+            --output-junit ${{ runner.workspace }}/build/test-results.xml
+            
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failures()
+      with:
+        name: Noctern Tests
+        path: ${{ runner.workspace }}/build/test-results.xml
+        reporter: java-junit
