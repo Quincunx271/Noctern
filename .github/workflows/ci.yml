@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        cxx: [g++, clang++]
+        flake-shell: [gcc13]
         std: [20, 23]
         build_type: [Debug]
 
@@ -23,28 +23,23 @@ jobs:
     - uses: cachix/install-nix-action@v27
       with:
         github_access_token: ${{ secrets.GITHUB_TOKEN }}
-        nix_path: nixpkgs=channel:nixos-unstable
 
     - name: Install packages
       # nix caches packages, so this will do the installs.
-      run: nix-shell
-
-    - name: Print Configuration
-      run: |
-        nix-shell --run '${{ matrix.cxx }} --version'
-        echo --std=c++${{ matrix.std }}
-        nix-shell --run 'cmake --version'
+      run: nix develop .#${{ matrix.flake-shell }}
 
     - name: Configure
-      run: nix-shell --run 'cmake -S. -B${{ runner.workspace }}/build
+      run: nix develop .#${{ matrix.flake-shell }} --command
+            cmake -S. -B${{ runner.workspace }}/build
             -GNinja
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-            -DCMAKE_CXX_COMPILER=${{ matrix.cxx }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=ON'
+            -DNOCTERN_WARNINGS_AS_ERRORS=ON
 
     - name: Build
-      run: nix-shell --run 'cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}'
+      run: nix develop .#${{ matrix.flake-shell }} --command
+            cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}
 
     - name: Run Tests
-      run: nix-shell --run 'ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV'
+      run: nix develop .#${{ matrix.flake-shell }} --command
+            ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV
