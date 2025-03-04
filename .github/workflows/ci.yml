@@ -37,6 +37,9 @@ jobs:
       # nix caches packages, so this will do the installs.
       run: nix develop
 
+    - name: Make ccache bin visible
+      # `ccache-action` can't see the nixpkgs ccache.
+      run: dirname $(nix develop --command which ccache) >> "$GITHUB_PATH"
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
