@@ -16,7 +16,7 @@ jobs:
         compiler: [g++]
         std: [23]
         build_type: [Debug]
-        warnings_as_errors: [WARNINGS_AS_ERRORS=OFF WARNINGS_AS_ERRORS=ON]
+        warnings_as_errors: [WARNINGS_AS_ERRORS=OFF, WARNINGS_AS_ERRORS=ON]
         sanitizer: ['']
 
         include:
