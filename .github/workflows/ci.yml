@@ -13,17 +13,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++, clang++]
-        std: [23]
-        build_type: [Debug]
+        preset: [gcc-debug, clang-debug, gcc-asan]
         warnings_as_errors: [WARNINGS_AS_ERRORS=OFF, WARNINGS_AS_ERRORS=ON]
-        sanitizer: ['']
 
-        include:
-          - compiler: g++
-            std: 23
-            build_type: Debug
-            sanitizer: -fsanitize=address
+        exclude:
+          - preset: gcc-asan
             warnings_as_errors: WARNINGS_AS_ERRORS=OFF
 
     steps:
@@ -44,41 +38,23 @@ jobs:
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
       with:
-        key: ci-${{ matrix.compiler }}-${{ matrix.build_type }}-${{ matrix.sanitizer }}
+        key: ci-${{ matrix.preset }}
 
     - name: Configure
       run: nix develop --command
-            cmake -S. -B${{ runner.workspace }}/build
-            -GNinja
-            -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
-            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-            -DCMAKE_CXX_STANDARD=${{ matrix.std }}
+            cmake -S. --preset ${{ matrix.preset }}
             -DNOCTERN_${{ matrix.warnings_as_errors }}
-            -DCMAKE_C_COMPILER_LAUNCHER=ccache
-            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache
-            -DCMAKE_CXX_FLAGS_INIT='${{ matrix.sanitizer }}'
-            -DCMAKE_EXE_FLAGS_INIT='${{ matrix.sanitizer }}'
-            -DCMAKE_STATIC_FLAGS_INIT='${{ matrix.sanitizer }}'
-            -DCMAKE_SHARED_FLAGS_INIT='${{ matrix.sanitizer }}'
 
     - name: Build
-      run: nix develop --command
-            cmake --build ${{ runner.workspace }}/build --config ${{ matrix.build_type }}
+      run: nix develop --command cmake --build --preset ${{ matrix.preset }}
 
     - name: Run Tests
-      run: nix develop --command
-            ctest --test-dir ${{ runner.workspace }}/build -C ${{ matrix.build_type }} -VV
-            --output-junit ${{ runner.workspace }}/build/test-results.xml
+      run: nix develop --command ctest --presets ${{ matrix.preset }} --output-on-failure
             
     - name: Test Report
       uses: dorny/test-reporter@v1
       if: success() || failure()
       with:
-        name: Tests (
-               ${{ matrix.compiler }}
-               ${{ matrix.build_type }}
-               C++${{ matrix.std }}
-               ${{ matrix.sanitizer }}
-              )
-        path: ${{ runner.workspace }}/build/test-results.xml
+        name: Test Results: ${{ matrix.preset }}
+        path: ${{ runner.workspace }}/build/${{ matrix.preset }}/test-results.xml
         reporter: java-junit

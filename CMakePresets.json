@@ -92,27 +92,52 @@
     "testPresets": [
         {
             "name": "default",
-            "configurePreset": "default"
+            "configurePreset": "default",
+            "inherits": [
+                "_defaults"
+            ]
         },
         {
             "name": "gcc-debug",
-            "configurePreset": "gcc-debug"
+            "configurePreset": "gcc-debug",
+            "inherits": [
+                "_defaults"
+            ]
         },
         {
             "name": "gcc-release",
-            "configurePreset": "gcc-release"
+            "configurePreset": "gcc-release",
+            "inherits": [
+                "_defaults"
+            ]
         },
         {
             "name": "gcc-asan",
-            "configurePreset": "gcc-asan"
+            "configurePreset": "gcc-asan",
+            "inherits": [
+                "_defaults"
+            ]
         },
         {
             "name": "clang-debug",
-            "configurePreset": "clang-debug"
+            "configurePreset": "clang-debug",
+            "inherits": [
+                "_defaults"
+            ]
         },
         {
             "name": "clang-release",
-            "configurePreset": "clang-release"
+            "configurePreset": "clang-release",
+            "inherits": [
+                "_defaults"
+            ]
+        },
+        {
+            "name": "_defaults",
+            "hidden": true,
+            "output": {
+                "outputJUnitFile": "test-results.xml"
+            }
         }
     ]
 }
