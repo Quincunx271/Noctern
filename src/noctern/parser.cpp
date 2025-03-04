@@ -19,8 +19,10 @@ namespace noctern {
     X(valdecl) /*       ::= <valdef_intro> <ident> <=> expr <;> */                                 \
     X(add_sub_expr) /*  ::= div_mul_expr add_sub_expr2 */                                          \
     X(add_sub_expr2) /* ::=  <+> expr | <-> expr | */                                              \
-    X(div_mul_expr) /*  ::= base_expr div_mul_expr2 */                                             \
-    X(div_mul_expr2) /*  ::= </> div_mul_expr | <*> div_mul_expr | */                              \
+    X(div_mul_expr) /*  ::= fn_call_expr div_mul_expr2 */                                          \
+    X(div_mul_expr2) /* ::= </> div_mul_expr | <*> div_mul_expr | */                               \
+    X(fn_call_expr) /*  ::= base_expr fn_call_expr2 */                                             \
+    X(fn_call_expr2) /* ::= <(> (list: join <,>) expr <)> | */                                     \
     X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
                 NOCTERN_X_RULE(NOCTERN_MAKE_ENUM_VALUE)
@@ -70,7 +72,10 @@ namespace noctern {
             tokens::const_iterator out;
 
             auto advance_token(token_id token_id) {
-                if (tokens.empty() || input.id(tokens.front()) != token_id) {
+                if (tokens.empty()) {
+                    assert(false && "parse error");
+                }
+                if (input.id(tokens.front()) != token_id) {
                     assert(false && "parse error");
                 }
                 auto it = input.extract(tokens.begin());
@@ -194,7 +199,7 @@ namespace noctern {
             }
 
             void parse_at(val_t<rule::div_mul_expr>) {
-                parse_at(val<rule::base_expr>);
+                parse_at(val<rule::fn_call_expr>);
                 parse_at(val<rule::div_mul_expr2>);
             }
 
@@ -210,6 +215,32 @@ namespace noctern {
                     parse_at(val<rule::div_mul_expr>);
 
                     push_token(token);
+                }
+            }
+
+            void parse_at(val_t<rule::fn_call_expr>) {
+                parse_at(val<rule::base_expr>);
+                parse_at(val<rule::fn_call_expr2>);
+            }
+
+            void parse_at(val_t<rule::fn_call_expr2>) {
+                if (tokens.empty()) {
+                    // Okay!
+                    return;
+                }
+                token_id token_id = input.id(tokens.front());
+                if (token_id == token_id::lparen) {
+                    push_token(advance_token(token_id::lparen));
+
+                    while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
+                        parse_at(val<rule::expr>);
+
+                        if (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
+                            advance_token(token_id::comma);
+                        }
+                    }
+
+                    push_token(advance_token(token_id::rparen));
                 }
             }
 

@@ -78,7 +78,7 @@ namespace noctern {
             fabricated_tokens tokens = noctern::make_tokens(
                 // def silly_add(x, y,): {
                 //     let z = y - 0.2;
-                //     return y + z  + x * 2. - 2 + .1;
+                //     return y + z  + x * 2. - return_me(2) + .1;
                 // };
                 {
                     fn_intro,
@@ -107,7 +107,10 @@ namespace noctern {
                     mult,
                     {real_lit, "2."},
                     minus,
+                    {ident, "return_me"},
+                    lparen,
                     {int_lit, "2"},
+                    rparen,
                     plus,
                     {real_lit, ".1"},
                     statement_end,
@@ -137,7 +140,10 @@ namespace noctern {
                     {ident, "x"},
                     {real_lit, "2."},
                     mult,
+                    {ident, "return_me"},
+                    lparen,
                     {int_lit, "2"},
+                    rparen,
                     {real_lit, ".1"},
                     plus,
                     minus,
