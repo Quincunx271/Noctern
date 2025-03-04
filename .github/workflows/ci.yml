@@ -39,6 +39,7 @@ jobs:
 
     - name: Make ccache bin visible
       # `ccache-action` can't see the nixpkgs ccache.
+      # Break nix's nice packaging to prevent duplicate installation.
       run: dirname $(nix develop --command which ccache) >> "$GITHUB_PATH"
     - name: ccache
       uses: hendrikmuhs/ccache-action@v1.2
