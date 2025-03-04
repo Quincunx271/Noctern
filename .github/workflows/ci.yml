@@ -69,6 +69,11 @@ jobs:
       uses: dorny/test-reporter@v1
       if: success() || failure()
       with:
-        name: Noctern Tests
+        name: Tests (
+               ${{ matrix.compiler }}
+               ${{ matrix.build_type }}
+               C++${{ matrix.std }}
+               ${{ matrix.sanitizer }}
+              )
         path: ${{ runner.workspace }}/build/test-results.xml
         reporter: java-junit
