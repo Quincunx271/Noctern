@@ -67,7 +67,7 @@ jobs:
             
     - name: Test Report
       uses: dorny/test-reporter@v1
-      if: success() || failures()
+      if: success() || failure()
       with:
         name: Noctern Tests
         path: ${{ runner.workspace }}/build/test-results.xml
