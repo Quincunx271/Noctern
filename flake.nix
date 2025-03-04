@@ -3,50 +3,54 @@
 
   inputs = {
     nixpkgs.url = "nixpkgs/nixos-24.11";
-
-    utils.url = "github:numtide/flake-utils";
   };
 
   outputs =
-    { self, nixpkgs, ... }@inputs:
-    inputs.utils.lib.eachSystem
-      [
+    {
+      self,
+      nixpkgs,
+      ...
+    }@inputs:
+    let
+      supportedSystems = [
         "x86_64-linux"
-        "i686-linux"
         "aarch64-linux"
-        "x86_64-darwin"
-        "aarch64-darwin"
-      ]
-      (
-        system:
-        let
-          pkgs = import nixpkgs {
-            inherit system;
-
-            overlays = [ ];
-          };
-        in
+      ];
+      forEachSystem =
+        f:
+        nixpkgs.lib.genAttrs supportedSystems (
+          system:
+          f {
+            pkgs = import nixpkgs { inherit system; };
+          }
+        );
+      libraries =
+        pkgs: with pkgs; [
+          spdlog
+          fmt
+          boost
+          flex
+          catch2
+        ];
+    in
+    {
+      devShells = forEachSystem (
+        { pkgs }:
         {
-          devShells.default = pkgs.mkShell rec {
-            name = "noctern";
+          gcc13 = pkgs.mkShell {
+            packages =
+              with pkgs;
+              [
+                cmake
+                gcc13
+                ninja
+                llvmPackages_19.clang-tools
 
-            packages = with pkgs; [
-              cmake
-              gcc13
-              ninja
-              llvmPackages_19.clang-tools
-              llvmPackages_19.libcxxClang
-              gdb
-
-              spdlog
-              fmt
-              boost
-              flex
-              catch2
-            ];
+                gdb
+              ]
+              ++ libraries pkgs;
           };
-
-          packages.default = pkgs.callPackage ./default.nix { };
         }
       );
+    };
 }
