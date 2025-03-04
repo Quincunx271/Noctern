@@ -14,8 +14,9 @@ jobs:
       fail-fast: false
       matrix:
         flake-shell: [gcc13]
-        std: [20, 23]
+        std: [23]
         build_type: [Debug]
+        warnings_as_errors: [false, true]
 
     steps:
     - uses: actions/checkout@v4
@@ -34,7 +35,7 @@ jobs:
             -GNinja
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
             -DCMAKE_CXX_STANDARD=${{ matrix.std }}
-            -DNOCTERN_WARNINGS_AS_ERRORS=ON
+            -DNOCTERN_WARNINGS_AS_ERRORS=${{ matrix.warnings_as_errors }}
 
     - name: Build
       run: nix develop .#${{ matrix.flake-shell }} --command
