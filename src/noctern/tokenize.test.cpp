@@ -143,7 +143,7 @@ namespace noctern {
                     .name = "real_lit/no leading digits",
                     .input = ".1234",
                     .expected = {token_id::real_lit},
-                    .expected_str_data = {".123456"},
+                    .expected_str_data = {".1234"},
                 },
                 {
                     .name = "real_lit/no digits",
