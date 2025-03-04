@@ -46,7 +46,10 @@ namespace noctern {
         constexpr operator ValK() const
             requires(requires(ValK v) {
                 // Is a `val_t<K>` specialization.
-                []<auto K>(val_t<K>) { }(v);
+                []<auto K>(type_t<val_t<K>>) { }(
+                    // Pass a `type` to avoid looking at `val_t`'s implicit conversions, which would
+                    // make this `requires` recursive.
+                    type<ValK>);
                 // With an implicit conversion from V to K types.
                 requires std::convertible_to<decltype(value), decltype(ValK::value)>;
                 // Where the values are equal.

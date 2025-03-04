@@ -42,7 +42,7 @@
                 gcc13
                 ninja
                 llvmPackages_19.clang-tools
-                llvmPackages_19.clangUseLLVM
+                clang_19
 
                 ccache
 
