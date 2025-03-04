@@ -18,7 +18,7 @@ jobs:
 
         exclude:
           - preset: gcc-asan
-            warnings_as_errors: WARNINGS_AS_ERRORS=OFF
+            warnings_as_errors: WARNINGS_AS_ERRORS=ON
 
     steps:
     - uses: actions/checkout@v4
@@ -49,7 +49,7 @@ jobs:
       run: nix develop --command cmake --build --preset ${{ matrix.preset }}
 
     - name: Run Tests
-      run: nix develop --command ctest --presets ${{ matrix.preset }} --output-on-failure
+      run: nix develop --command ctest --preset ${{ matrix.preset }} --output-on-failure
             
     - name: Test Report
       uses: dorny/test-reporter@v1
