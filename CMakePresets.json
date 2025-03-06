@@ -56,7 +56,8 @@
             "generator": "Ninja",
             "binaryDir": "build/${presetName}",
             "inherits": [
-                "_ccache"
+                "_ccache",
+                "_compile_commands_json"
             ]
         }
     ],
