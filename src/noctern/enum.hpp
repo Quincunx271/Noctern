@@ -83,7 +83,7 @@ namespace noctern {
 
     /////
     // The key functions. These are not hidden friends to work around a Clang bug.
-    
+
     template <typename Enum>
         requires std::is_enum_v<Enum>
     constexpr std::string_view stringify(Enum e) {
@@ -108,7 +108,7 @@ namespace noctern {
                 return std::invoke(std::forward<Fn>(fn), val<es>...);
             });
     }
-    
+
     // End key functions.
     /////
 

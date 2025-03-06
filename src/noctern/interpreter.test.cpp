@@ -101,11 +101,12 @@ namespace noctern {
                 });
 
             noctern::compilation_unit cu(tokens.tokens);
-            noctern::symbol_table st(tokens.tokens, cu);
+            noctern::string_intern_table global_symbols;
+            noctern::symbol_table st(tokens.tokens, cu, global_symbols);
             noctern::interpreter interpreter(st);
 
             // TODO: safely unwrap this.
-            noctern::token silly_add = *st.find_fn_decl("silly_add");
+            noctern::token silly_add = *st.find_fn_decl(global_symbols.intern("silly_add"));
 
             double x = 42.3;
             double y = -2.9;

@@ -7,6 +7,7 @@
 #include <fmt/core.h>
 
 #include "noctern/compilation_unit.hpp"
+#include "noctern/intern_table.hpp"
 #include "noctern/interpreter.hpp"
 #include "noctern/parser.hpp"
 #include "noctern/symbol_table.hpp"
@@ -56,10 +57,12 @@ int main(int argc, char** argv) {
 
     noctern::tokens tokens = noctern::tokenize_all(source);
     tokens = noctern::parse(std::move(tokens));
-    noctern::compilation_unit compile_unit(tokens);
-    noctern::symbol_table symbol_table(tokens, compile_unit);
 
-    std::optional<noctern::token> main = symbol_table.find_fn_decl("Main");
+    noctern::compilation_unit compile_unit(tokens);
+    noctern::string_intern_table global_symbols;
+    noctern::symbol_table symbol_table(tokens, compile_unit, global_symbols);
+
+    std::optional<noctern::token> main = symbol_table.find_fn_decl(global_symbols.intern("Main"));
     if (!main.has_value()) {
         fmt::println(stderr, "No `Main()` function found!");
         return 1;
