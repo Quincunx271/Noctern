@@ -156,6 +156,92 @@ namespace noctern {
             std::vector<std::vector<std::string_view>> variable_names_;
         };
 
+        class types {
+            using type_index_t = uint32_t;
+            using typecode_index_t = uint64_t;
+            static constexpr type_index_t unit = 0;
+
+        public:
+            // The idea: top-down instructions on how to decompose a type.
+            // Rather than bottom-up instructions on how to compose a type.
+            enum class opcode : uint8_t {
+#define NOCTERN_X_NIR_OPCODE(X) X(return_)
+#define NOCTERN_MAKE_ENUM(name) name,
+                NOCTERN_X_NIR_OPCODE(NOCTERN_MAKE_ENUM)
+#undef NOCTERN_MAKE_ENUM
+            };
+
+            class type {
+                friend types;
+
+            public:
+                constexpr type() = default;
+
+            private:
+                explicit constexpr type(type_index_t index)
+                    : index_(index) {
+                }
+
+                type_index_t index_ = unit;
+            };
+
+        private:
+            using payload_word_t = uint32_t;
+
+            struct instruction {
+                types::opcode opcode;
+            };
+
+        public:
+            class type_builder {
+                friend types;
+
+            public:
+            private:
+                std::vector<types::instruction> typecode_;
+            };
+
+            type define_type(type_builder, uint32_t align, uint32_t size) {
+                auto index = static_cast<type_index_t>(types_.size());
+                types_.push_back(typecode_index_t {0});
+                type_sizes_.push_back(size_info {.alignment = align, .size = size});
+                return type(index);
+            }
+
+        private:
+            friend enum_mixin;
+
+            template <typename Fn>
+            friend constexpr decltype(auto) switch_introspect(opcode op, Fn&& fn) {
+                switch (op) {
+                    using enum opcode;
+                    NOCTERN_X_NIR_OPCODE(NOCTERN_ENUM_X_INTROSPECT)
+                }
+                assert(false);
+            }
+
+            template <typename Fn>
+            friend constexpr decltype(auto) introspect(type_t<opcode>, Fn&& fn) {
+                using enum opcode;
+                return std::invoke(std::forward<Fn>(fn)
+#define NOCTERN_NIR_OPCODE_TYPE(name) , val<name>
+                        NOCTERN_X_NIR_OPCODE(NOCTERN_NIR_OPCODE_TYPE)
+#undef NOCTERN_NIR_OPCODE_TYPE
+                );
+            }
+#undef NOCTERN_X_NIR_OPCODE
+
+        private:
+            struct size_info {
+                uint32_t alignment;
+                uint32_t size;
+            };
+
+            std::vector<typecode_index_t> types_;
+            std::vector<instruction> typecode_ = {instruction {.opcode = opcode::return_}};
+            std::vector<size_info> type_sizes_;
+        };
+
     private:
         instructions instructions_;
         std::vector<instructions::function> functions_;
