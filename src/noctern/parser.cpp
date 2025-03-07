@@ -11,19 +11,20 @@ namespace noctern {
             enum class rule : uint8_t {
 #define NOCTERN_X_RULE(X)                                                                          \
     X(file) /*          ::= (list) fndef */                                                        \
-    X(fndef) /*         ::= <def> <ident> <(> fn_params <)> <:> expr <;> */                        \
-    X(fn_params) /*     ::= (list: join <,>) <ident> */                                            \
+    X(fndef) /*         ::= <def> <ident> <(> fn_params <)> <:> <type> <=> expr <;> */             \
+    X(fn_params) /*     ::= (list: join <,>) (<ident> <:> <type>) */                               \
     X(expr) /*          ::= block | add_sub_expr */                                                \
     X(block) /*         ::= <{> ((list) valdecl) return_ <}> */                                    \
     X(return_) /*       ::= <return_> expr <;> */                                                  \
-    X(valdecl) /*       ::= <let> <ident> <=> expr <;> */                                          \
+    X(valdecl) /*       ::= <let> <ident> <:> <type> <=> expr <;> */                               \
     X(add_sub_expr) /*  ::= div_mul_expr add_sub_expr2 */                                          \
     X(add_sub_expr2) /* ::=  <+> expr | <-> expr | */                                              \
     X(div_mul_expr) /*  ::= fn_call_expr div_mul_expr2 */                                          \
     X(div_mul_expr2) /* ::= </> div_mul_expr | <*> div_mul_expr | */                               \
     X(fn_call_expr) /*  ::= base_expr fn_call_expr2 */                                             \
     X(fn_call_expr2) /* ::= <(> (list: join <,>) expr <)> | */                                     \
-    X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */
+    X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */                     \
+    X(type) /*          ::= <ident> */
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
                 NOCTERN_X_RULE(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
@@ -111,6 +112,10 @@ namespace noctern {
                 push_token(advance_token(token_id::rparen));
                 advance_token(token_id::colon);
 
+                parse_at(val<rule::type>);
+
+                advance_token(token_id::assign);
+
                 parse_at(val<rule::expr>);
 
                 push_token(advance_token(token_id::semicolon));
@@ -119,6 +124,8 @@ namespace noctern {
             void parse_at(val_t<rule::fn_params>) {
                 while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                     push_token(advance_token(token_id::ident));
+                    advance_token(token_id::colon);
+                    parse_at(val<rule::type>);
 
                     if (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                         if (input.id(tokens.front()) != token_id::comma) {
@@ -170,6 +177,8 @@ namespace noctern {
             void parse_at(val_t<rule::valdecl>) {
                 push_token(advance_token(token_id::let));
                 push_token(advance_token(token_id::ident));
+                advance_token(token_id::colon);
+                parse_at(val<rule::type>);
                 advance_token(token_id::assign);
 
                 parse_at(val<rule::expr>);
@@ -262,6 +271,10 @@ namespace noctern {
                     // ERROR
                     assert(false && "parse error");
                 }
+            }
+
+            void parse_at(val_t<rule::type>) {
+                push_token(advance_token(token_id::ident));
             }
         };
     }

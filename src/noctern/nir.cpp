@@ -109,7 +109,13 @@ namespace noctern {
                 // Error: duplicate function parameter names!
                 assert(was_inserted && "Duplicated function parameter names");
                 ++pos;
+                // TODO: type
+                assert(source.id(*pos) == token_id::ident);
+                ++pos;
             }
+            ++pos;
+            // TODO: return type
+            assert(source.id(*pos) == token_id::ident);
             ++pos;
 
             token_id id = source.id(*pos);
@@ -129,6 +135,10 @@ namespace noctern {
                 ++pos;
                 assert(source.id(*pos) == token_id::ident);
                 std::string_view variable_name = source.string(*pos);
+                ++pos;
+
+                // TODO: type
+                assert(source.id(*pos) == token_id::ident);
                 ++pos;
 
                 register_index_t reg = compile_expr(source, pos);

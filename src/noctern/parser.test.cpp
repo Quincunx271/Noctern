@@ -76,8 +76,8 @@ namespace noctern {
             using enum noctern::token_id;
 
             fabricated_tokens tokens = noctern::make_tokens(
-                // def silly_add(x, y,): {
-                //     let z = y - 0.2;
+                // def silly_add(x: f64, y: f64,): f64 = {
+                //     let z: f64 = y - 0.2;
                 //     return y + z  + x * 2. - return_me(2) + .1;
                 // };
                 {
@@ -85,14 +85,22 @@ namespace noctern {
                     {ident, "silly_add"},
                     lparen,
                     {ident, "x"},
+                    colon,
+                    {ident, "f64"},
                     comma,
                     {ident, "y"},
+                    colon,
+                    {ident, "f64"},
                     comma,
                     rparen,
                     colon,
+                    {ident, "f64"},
+                    assign,
                     lbrace,
                     let,
                     {ident, "z"},
+                    colon,
+                    {ident, "f64"},
                     assign,
                     {ident, "y"},
                     minus,
@@ -125,11 +133,15 @@ namespace noctern {
                     def,
                     {ident, "silly_add"},
                     {ident, "x"},
+                    {ident, "f64"},
                     {ident, "y"},
+                    {ident, "f64"},
                     rparen,
+                    {ident, "f64"},
                     lbrace,
                     let,
                     {ident, "z"},
+                    {ident, "f64"},
                     {ident, "y"},
                     {real_lit, "0.2"},
                     minus,

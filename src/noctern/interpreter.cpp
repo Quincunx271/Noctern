@@ -24,7 +24,13 @@ namespace noctern {
             assert(source.id(*pos) == token_id::ident);
             assert(frame.locals.contains(source.string(*pos)));
             ++pos;
+            // TODO: type
+            assert(source.id(*pos) == token_id::ident);
+            ++pos;
         }
+        ++pos;
+        // TODO: return type
+        assert(source.id(*pos) == token_id::ident);
         ++pos;
 
         token_id id = source.id(*pos);
@@ -44,6 +50,10 @@ namespace noctern {
             ++pos;
             assert(source.id(*pos) == token_id::ident);
             const token ident = *pos;
+            ++pos;
+
+            // TODO: type
+            assert(source.id(*pos) == token_id::ident);
             ++pos;
 
             double result = eval_expr(source, frame, pos);
