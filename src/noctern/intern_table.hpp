@@ -48,8 +48,12 @@ namespace noctern {
                 InternIndexType data = index_;
                 for (size_t index = 0; index < result.size(); ++index) {
                     result[index] = data & MaxWord;
-                    // TODO: disable -Wmissing-field-initializers
-                    data >>= WordBits;
+                    if constexpr (sizeof(Word) < sizeof(InternIndexType)) {
+                        // Work around -Wshift-count-overflow. It would do the right thing anyway,
+                        // but compilers warn that we're shifting by a very large value, so this is
+                        // "useless". It's not, because this is generic code.
+                        data >>= WordBits;
+                    }
                 }
                 return result;
             }
@@ -61,7 +65,12 @@ namespace noctern {
 
                 InternIndexType result = 0;
                 for (size_t indexp1 = encoded_size(type<Word>); indexp1 > 0; --indexp1) {
-                    result <<= WordBits;
+                    if constexpr (sizeof(Word) < sizeof(InternIndexType)) {
+                        // Work around -Wshift-count-overflow. It would do the right thing anyway,
+                        // but compilers warn that we're shifting by a very large value, so this is
+                        // "useless". It's not, because this is generic code.
+                        result <<= WordBits;
+                    }
                     result |= data[indexp1 - 1];
                 }
 
