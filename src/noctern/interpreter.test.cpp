@@ -66,23 +66,27 @@ namespace noctern {
             using enum noctern::token_id;
 
             fabricated_tokens tokens = noctern::make_tokens(
-                // def silly_add(x, y,): {
-                //     let z = y - 0.2;
+                // def silly_add(x: f64, y: f64,): f64 = {
+                //     let z: f64 = y - 0.2;
                 //     return y + z  + x * 2. - 2 + .1;
                 // };
                 {
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     {ident, "x"},
+                    {ident, "f64"},
                     {ident, "y"},
+                    {ident, "f64"},
                     rparen,
+                    {ident, "f64"},
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
+                    {ident, "f64"},
                     {ident, "y"},
                     {real_lit, "0.2"},
                     minus,
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     {ident, "z"},
@@ -95,17 +99,18 @@ namespace noctern {
                     minus,
                     {real_lit, ".1"},
                     plus,
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 });
 
             noctern::compilation_unit cu(tokens.tokens);
-            noctern::symbol_table st(tokens.tokens, cu);
+            noctern::string_intern_table global_symbols;
+            noctern::symbol_table st(tokens.tokens, cu, global_symbols);
             noctern::interpreter interpreter(st);
 
             // TODO: safely unwrap this.
-            noctern::token silly_add = *st.find_fn_decl("silly_add");
+            noctern::token silly_add = *st.find_fn_decl(global_symbols.intern("silly_add"));
 
             double x = 42.3;
             double y = -2.9;

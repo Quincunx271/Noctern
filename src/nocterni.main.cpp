@@ -9,7 +9,6 @@
 #include "noctern/compilation_unit.hpp"
 #include "noctern/intern_table.hpp"
 #include "noctern/interpreter.hpp"
-#include "noctern/nir.hpp"
 #include "noctern/parser.hpp"
 #include "noctern/symbol_table.hpp"
 #include "noctern/tokenize.hpp"
@@ -69,13 +68,10 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    noctern::nir::types types;
-    [[maybe_unused]] noctern::nir::types::type f64
-        = types.define_type({}, alignof(double), sizeof(double));
+    noctern::interpreter interpreter(std::move(symbol_table));
+    double result = interpreter.eval_fn(tokens, *main, noctern::interpreter::frame {});
 
-    noctern::nir::instructions instructions;
-    [[maybe_unused]] noctern::nir::instructions::function fn
-        = instructions.compile_function(tokens, *main, global_symbols);
+    fmt::println(stdout, "Result: {}", result);
 
     return 0;
 }

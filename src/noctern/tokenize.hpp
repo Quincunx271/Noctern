@@ -30,13 +30,13 @@ namespace noctern {
     X(rbrace)                                                                                      \
     X(lparen)                                                                                      \
     X(rparen)                                                                                      \
-    X(statement_end)                                                                               \
+    X(semicolon)                                                                                   \
                                                                                                    \
-    X(fn_intro)                                                                                    \
-    X(fn_outro)                                                                                    \
+    X(def)                                                                                         \
+    X(colon)                                                                                       \
                                                                                                    \
-    X(valdef_intro)                                                                                \
-    X(valdef_outro)                                                                                \
+    X(let)                                                                                         \
+    X(assign)                                                                                      \
     X(ident)                                                                                       \
                                                                                                    \
     X(int_lit)                                                                                     \
@@ -46,7 +46,6 @@ namespace noctern {
     X(minus)                                                                                       \
     X(mult)                                                                                        \
     X(div)                                                                                         \
-                                                                                                   \
     X(return_)
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
             NOCTERN_X_TOKEN(NOCTERN_MAKE_ENUM_VALUE)
@@ -112,10 +111,10 @@ namespace noctern {
     inline constexpr auto token_data<token_id::space> = string_data {};
 
     template <>
-    inline constexpr auto token_data<token_id::fn_intro> = empty_data<"def"> {};
+    inline constexpr auto token_data<token_id::def> = empty_data<"def"> {};
 
     template <>
-    inline constexpr auto token_data<token_id::fn_outro> = empty_data<":"> {};
+    inline constexpr auto token_data<token_id::colon> = empty_data<":"> {};
 
     template <>
     inline constexpr auto token_data<token_id::lbrace> = empty_data<"{"> {};
@@ -127,10 +126,10 @@ namespace noctern {
     inline constexpr auto token_data<token_id::comma> = empty_data<","> {};
 
     template <>
-    inline constexpr auto token_data<token_id::valdef_intro> = empty_data<"let"> {};
+    inline constexpr auto token_data<token_id::let> = empty_data<"let"> {};
 
     template <>
-    inline constexpr auto token_data<token_id::valdef_outro> = empty_data<"="> {};
+    inline constexpr auto token_data<token_id::assign> = empty_data<"="> {};
 
     template <>
     inline constexpr auto token_data<token_id::ident> = string_data {};
@@ -160,7 +159,7 @@ namespace noctern {
     inline constexpr auto token_data<token_id::rparen> = empty_data<")"> {};
 
     template <>
-    inline constexpr auto token_data<token_id::statement_end> = empty_data<";"> {};
+    inline constexpr auto token_data<token_id::semicolon> = empty_data<";"> {};
 
     template <>
     inline constexpr auto token_data<token_id::return_> = empty_data<"return"> {};

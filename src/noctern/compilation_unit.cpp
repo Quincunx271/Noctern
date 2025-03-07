@@ -16,6 +16,6 @@ namespace noctern {
 
     compilation_unit::compilation_unit(const tokens& input)
         : fn_defs_(noctern::from_range(std::ranges::filter_view(
-              input, [&](token t) { return input.id(t) == token_id::fn_intro; }))) {
+              input, [&](token t) { return input.id(t) == token_id::def; }))) {
     }
 }

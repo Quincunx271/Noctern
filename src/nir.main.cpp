@@ -2,9 +2,11 @@
 #include <cstddef>
 #include <cstdio>
 #include <cstring>
+#include <ranges>
 #include <string>
 
 #include <fmt/core.h>
+#include <fmt/ranges.h>
 
 #include "noctern/compilation_unit.hpp"
 #include "noctern/intern_table.hpp"
@@ -69,13 +71,37 @@ int main(int argc, char** argv) {
         return 1;
     }
 
-    noctern::nir::types types;
-    [[maybe_unused]] noctern::nir::types::type f64
-        = types.define_type({}, alignof(double), sizeof(double));
-
     noctern::nir::instructions instructions;
-    [[maybe_unused]] noctern::nir::instructions::function fn
+    noctern::nir::instructions::function fn
         = instructions.compile_function(tokens, *main, global_symbols);
+
+    instructions.visit(fn,
+        [&]<noctern::nir::instructions::opcode op, typename Register, typename... Args>(
+            noctern::val_t<op>, Register reg, Args&&... args) {
+            using enum noctern::nir::instructions::opcode;
+            if constexpr (op == return_) {
+                fmt::println("  return %r{}", reg);
+            } else {
+                fmt::print("  %r{} = {}", reg, stringify(op));
+
+                if constexpr (op == load_int_lit || op == load_real_lit) {
+                    fmt::print(" {}", [](auto x) { return x; }(args...));
+                } else if constexpr (op == load_nonlocal) {
+                    fmt::print(" {}", [&](noctern::interned_string id) {
+                        return global_symbols.get(id);
+                    }(args...));
+                } else if constexpr (op == call) {
+                    [&]<typename Reg>(Reg fn, std::span<const Reg> args) {
+                        fmt::print(" %r{}({})", fn,
+                            fmt::join(std::ranges::transform_view(
+                                          args, [](auto reg) { return fmt::format("%r{}", reg); }),
+                                ", "));
+                    }(args...);
+                }
+
+                fmt::println("");
+            }
+        });
 
     return 0;
 }

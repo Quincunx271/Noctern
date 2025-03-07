@@ -76,28 +76,36 @@ namespace noctern {
             using enum noctern::token_id;
 
             fabricated_tokens tokens = noctern::make_tokens(
-                // def silly_add(x, y,): {
-                //     let z = y - 0.2;
-                //     return y + z  + x * 2. - 2 + .1;
+                // def silly_add(x: f64, y: f64,): f64 = {
+                //     let z: f64 = y - 0.2;
+                //     return y + z  + x * 2. - return_me(2) + .1;
                 // };
                 {
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     lparen,
                     {ident, "x"},
+                    colon,
+                    {ident, "f64"},
                     comma,
                     {ident, "y"},
+                    colon,
+                    {ident, "f64"},
                     comma,
                     rparen,
-                    fn_outro,
+                    colon,
+                    {ident, "f64"},
+                    assign,
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
-                    valdef_outro,
+                    colon,
+                    {ident, "f64"},
+                    assign,
                     {ident, "y"},
                     minus,
                     {real_lit, "0.2"},
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     plus,
@@ -107,45 +115,55 @@ namespace noctern {
                     mult,
                     {real_lit, "2."},
                     minus,
+                    {ident, "return_me"},
+                    lparen,
                     {int_lit, "2"},
+                    rparen,
                     plus,
                     {real_lit, ".1"},
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 });
 
             noctern::tokens result = noctern::parse(tokens.tokens);
 
             CHECK_THAT(noctern::elaborate(result),
                 Catch::Matchers::Equals(std::vector<elaborated_token>({
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     {ident, "x"},
+                    {ident, "f64"},
                     {ident, "y"},
+                    {ident, "f64"},
                     rparen,
+                    {ident, "f64"},
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
+                    {ident, "f64"},
                     {ident, "y"},
                     {real_lit, "0.2"},
                     minus,
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     {ident, "z"},
                     {ident, "x"},
                     {real_lit, "2."},
                     mult,
+                    {ident, "return_me"},
+                    lparen,
                     {int_lit, "2"},
+                    rparen,
                     {real_lit, ".1"},
                     plus,
                     minus,
                     plus,
                     plus,
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 })));
         }
     }

@@ -11,17 +11,20 @@ namespace noctern {
             enum class rule : uint8_t {
 #define NOCTERN_X_RULE(X)                                                                          \
     X(file) /*          ::= (list) fndef */                                                        \
-    X(fndef) /*         ::= <fn_intro> <ident> <(> fn_params <)> <:> expr <;> */                   \
-    X(fn_params) /*     ::= (list: join <,>) <ident> */                                            \
+    X(fndef) /*         ::= <def> <ident> <(> fn_params <)> <:> <type> <=> expr <;> */             \
+    X(fn_params) /*     ::= (list: join <,>) (<ident> <:> <type>) */                               \
     X(expr) /*          ::= block | add_sub_expr */                                                \
     X(block) /*         ::= <{> ((list) valdecl) return_ <}> */                                    \
     X(return_) /*       ::= <return_> expr <;> */                                                  \
-    X(valdecl) /*       ::= <valdef_intro> <ident> <=> expr <;> */                                 \
+    X(valdecl) /*       ::= <let> <ident> <:> <type> <=> expr <;> */                               \
     X(add_sub_expr) /*  ::= div_mul_expr add_sub_expr2 */                                          \
     X(add_sub_expr2) /* ::=  <+> expr | <-> expr | */                                              \
-    X(div_mul_expr) /*  ::= base_expr div_mul_expr2 */                                             \
-    X(div_mul_expr2) /*  ::= </> div_mul_expr | <*> div_mul_expr | */                              \
-    X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */
+    X(div_mul_expr) /*  ::= fn_call_expr div_mul_expr2 */                                          \
+    X(div_mul_expr2) /* ::= </> div_mul_expr | <*> div_mul_expr | */                               \
+    X(fn_call_expr) /*  ::= base_expr fn_call_expr2 */                                             \
+    X(fn_call_expr2) /* ::= <(> (list: join <,>) expr <)> | */                                     \
+    X(base_expr) /*     ::= <(> expr <)> | <int_lit> | <real_lit> | <ident> */                     \
+    X(type) /*          ::= <ident> */
 #define NOCTERN_MAKE_ENUM_VALUE(name) name,
                 NOCTERN_X_RULE(NOCTERN_MAKE_ENUM_VALUE)
 #undef NOCTERN_MAKE_ENUM_VALUE
@@ -70,7 +73,10 @@ namespace noctern {
             tokens::const_iterator out;
 
             auto advance_token(token_id token_id) {
-                if (tokens.empty() || input.id(tokens.front()) != token_id) {
+                if (tokens.empty()) {
+                    assert(false && "parse error");
+                }
+                if (input.id(tokens.front()) != token_id) {
                     assert(false && "parse error");
                 }
                 auto it = input.extract(tokens.begin());
@@ -87,7 +93,7 @@ namespace noctern {
             void parse_at(val_t<rule::file>) {
                 while (!tokens.empty()) {
                     const token_id token_id = input.id(tokens.front());
-                    if (token_id == token_id::fn_intro) {
+                    if (token_id == token_id::def) {
                         parse_at(val<rule::fndef>);
                     } else {
                         // ERROR!
@@ -97,23 +103,29 @@ namespace noctern {
             }
 
             void parse_at(val_t<rule::fndef>) {
-                push_token(advance_token(token_id::fn_intro));
+                push_token(advance_token(token_id::def));
                 push_token(advance_token(token_id::ident));
                 advance_token(token_id::lparen);
 
                 parse_at(val<rule::fn_params>);
 
                 push_token(advance_token(token_id::rparen));
-                advance_token(token_id::fn_outro);
+                advance_token(token_id::colon);
+
+                parse_at(val<rule::type>);
+
+                advance_token(token_id::assign);
 
                 parse_at(val<rule::expr>);
 
-                push_token(advance_token(token_id::statement_end));
+                push_token(advance_token(token_id::semicolon));
             }
 
             void parse_at(val_t<rule::fn_params>) {
                 while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                     push_token(advance_token(token_id::ident));
+                    advance_token(token_id::colon);
+                    parse_at(val<rule::type>);
 
                     if (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
                         if (input.id(tokens.front()) != token_id::comma) {
@@ -159,17 +171,19 @@ namespace noctern {
             void parse_at(val_t<rule::return_>) {
                 push_token(advance_token(token_id::return_));
                 parse_at(val<rule::expr>);
-                push_token(advance_token(token_id::statement_end));
+                push_token(advance_token(token_id::semicolon));
             }
 
             void parse_at(val_t<rule::valdecl>) {
-                push_token(advance_token(token_id::valdef_intro));
+                push_token(advance_token(token_id::let));
                 push_token(advance_token(token_id::ident));
-                advance_token(token_id::valdef_outro);
+                advance_token(token_id::colon);
+                parse_at(val<rule::type>);
+                advance_token(token_id::assign);
 
                 parse_at(val<rule::expr>);
 
-                push_token(advance_token(token_id::statement_end));
+                push_token(advance_token(token_id::semicolon));
             }
 
             void parse_at(val_t<rule::add_sub_expr>) {
@@ -194,7 +208,7 @@ namespace noctern {
             }
 
             void parse_at(val_t<rule::div_mul_expr>) {
-                parse_at(val<rule::base_expr>);
+                parse_at(val<rule::fn_call_expr>);
                 parse_at(val<rule::div_mul_expr2>);
             }
 
@@ -210,6 +224,32 @@ namespace noctern {
                     parse_at(val<rule::div_mul_expr>);
 
                     push_token(token);
+                }
+            }
+
+            void parse_at(val_t<rule::fn_call_expr>) {
+                parse_at(val<rule::base_expr>);
+                parse_at(val<rule::fn_call_expr2>);
+            }
+
+            void parse_at(val_t<rule::fn_call_expr2>) {
+                if (tokens.empty()) {
+                    // Okay!
+                    return;
+                }
+                token_id token_id = input.id(tokens.front());
+                if (token_id == token_id::lparen) {
+                    push_token(advance_token(token_id::lparen));
+
+                    while (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
+                        parse_at(val<rule::expr>);
+
+                        if (!tokens.empty() && input.id(tokens.front()) != token_id::rparen) {
+                            advance_token(token_id::comma);
+                        }
+                    }
+
+                    push_token(advance_token(token_id::rparen));
                 }
             }
 
@@ -231,6 +271,10 @@ namespace noctern {
                     // ERROR
                     assert(false && "parse error");
                 }
+            }
+
+            void parse_at(val_t<rule::type>) {
+                push_token(advance_token(token_id::ident));
             }
         };
     }

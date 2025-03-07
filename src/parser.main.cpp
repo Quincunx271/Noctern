@@ -9,7 +9,6 @@
 #include "noctern/compilation_unit.hpp"
 #include "noctern/intern_table.hpp"
 #include "noctern/interpreter.hpp"
-#include "noctern/nir.hpp"
 #include "noctern/parser.hpp"
 #include "noctern/symbol_table.hpp"
 #include "noctern/tokenize.hpp"
@@ -59,23 +58,13 @@ int main(int argc, char** argv) {
     noctern::tokens tokens = noctern::tokenize_all(source);
     tokens = noctern::parse(std::move(tokens));
 
-    noctern::compilation_unit compile_unit(tokens);
-    noctern::string_intern_table global_symbols;
-    noctern::symbol_table symbol_table(tokens, compile_unit, global_symbols);
-
-    std::optional<noctern::token> main = symbol_table.find_fn_decl(global_symbols.intern("Main"));
-    if (!main.has_value()) {
-        fmt::println(stderr, "No `Main()` function found!");
-        return 1;
+    for (noctern::token token : tokens) {
+        noctern::token_id id = tokens.id(token);
+        if (id == noctern::token_id::space) continue;
+        if (noctern::has_data(id)) {
+            fmt::println("<{}: {}>", stringify(id), tokens.string(token));
+        } else {
+            fmt::println("<{}>", stringify(id));
+        }
     }
-
-    noctern::nir::types types;
-    [[maybe_unused]] noctern::nir::types::type f64
-        = types.define_type({}, alignof(double), sizeof(double));
-
-    noctern::nir::instructions instructions;
-    [[maybe_unused]] noctern::nir::instructions::function fn
-        = instructions.compile_function(tokens, *main, global_symbols);
-
-    return 0;
 }
