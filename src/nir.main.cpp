@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
             noctern::val_t<op>, Register reg, Args&&... args) {
             using enum noctern::nir::instructions::opcode;
             if constexpr (op == return_) {
-                fmt::println("  return {}", reg);
+                fmt::println("  return %r{}", reg);
             } else {
                 fmt::print("  %r{} = {}", reg, stringify(op));
 
