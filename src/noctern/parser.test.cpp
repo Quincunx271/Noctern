@@ -81,7 +81,7 @@ namespace noctern {
                 //     return y + z  + x * 2. - return_me(2) + .1;
                 // };
                 {
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     lparen,
                     {ident, "x"},
@@ -89,15 +89,15 @@ namespace noctern {
                     {ident, "y"},
                     comma,
                     rparen,
-                    fn_outro,
+                    colon,
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
-                    valdef_outro,
+                    assign,
                     {ident, "y"},
                     minus,
                     {real_lit, "0.2"},
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     plus,
@@ -113,27 +113,27 @@ namespace noctern {
                     rparen,
                     plus,
                     {real_lit, ".1"},
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 });
 
             noctern::tokens result = noctern::parse(tokens.tokens);
 
             CHECK_THAT(noctern::elaborate(result),
                 Catch::Matchers::Equals(std::vector<elaborated_token>({
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     {ident, "x"},
                     {ident, "y"},
                     rparen,
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
                     {ident, "y"},
                     {real_lit, "0.2"},
                     minus,
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     {ident, "z"},
@@ -149,9 +149,9 @@ namespace noctern {
                     minus,
                     plus,
                     plus,
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 })));
         }
     }

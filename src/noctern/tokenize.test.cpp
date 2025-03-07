@@ -31,15 +31,15 @@ namespace noctern {
             std::vector<test_case> test_cases = {
                 {.name = "empty"},
                 {
-                    .name = "fn_intro",
+                    .name = "def",
                     .input = "def",
-                    .expected = {token_id::fn_intro},
+                    .expected = {token_id::def},
                     .expected_str_data = {"def"},
                 },
                 {
-                    .name = "fn_outro",
+                    .name = "colon",
                     .input = ":",
-                    .expected = {token_id::fn_outro},
+                    .expected = {token_id::colon},
                     .expected_str_data = {":"},
                 },
                 {
@@ -55,15 +55,15 @@ namespace noctern {
                     .expected_str_data = {"}"},
                 },
                 {
-                    .name = "valdef_intro",
+                    .name = "let",
                     .input = "let",
-                    .expected = {token_id::valdef_intro},
+                    .expected = {token_id::let},
                     .expected_str_data = {"let"},
                 },
                 {
-                    .name = "valdef_outro",
+                    .name = "assign",
                     .input = "=",
-                    .expected = {token_id::valdef_outro},
+                    .expected = {token_id::assign},
                     .expected_str_data = {"="},
                 },
                 {
@@ -188,9 +188,9 @@ namespace noctern {
                     .expected_str_data = {")"},
                 },
                 {
-                    .name = "statement_end",
+                    .name = "semicolon",
                     .input = ";",
-                    .expected = {token_id::statement_end},
+                    .expected = {token_id::semicolon},
                     .expected_str_data = {";"},
                 },
                 {
@@ -238,15 +238,15 @@ namespace noctern {
             test_cases.push_back({
                 .name = "function definition stream",
                 .input = R"(def foobar(x, y): { let z = y; return z   + x + 0.2; })",
-                .expected = {token_id::fn_intro, token_id::space, token_id::ident, token_id::lparen,
+                .expected = {token_id::def, token_id::space, token_id::ident, token_id::lparen,
                     token_id::ident, token_id::comma, token_id::space, token_id::ident,
-                    token_id::rparen, token_id::fn_outro, token_id::space, token_id::lbrace,
-                    token_id::space, token_id::valdef_intro, token_id::space, token_id::ident,
-                    token_id::space, token_id::valdef_outro, token_id::space, token_id::ident,
-                    token_id::statement_end, token_id::space, token_id::return_, token_id::space,
+                    token_id::rparen, token_id::colon, token_id::space, token_id::lbrace,
+                    token_id::space, token_id::let, token_id::space, token_id::ident,
+                    token_id::space, token_id::assign, token_id::space, token_id::ident,
+                    token_id::semicolon, token_id::space, token_id::return_, token_id::space,
                     token_id::ident, token_id::space, token_id::plus, token_id::space,
                     token_id::ident, token_id::space, token_id::plus, token_id::space,
-                    token_id::real_lit, token_id::statement_end, token_id::space, token_id::rbrace},
+                    token_id::real_lit, token_id::semicolon, token_id::space, token_id::rbrace},
                 .expected_str_data = {"def", " ", "foobar", "(", "x", ",", " ", "y", ")", ":", " ",
                     "{", " ", "let", " ", "z", " ", "=", " ", "y", ";", " ", "return", " ", "z",
                     "   ", "+", " ", "x", " ", "+", " ", "0.2", ";", " ", "}"},

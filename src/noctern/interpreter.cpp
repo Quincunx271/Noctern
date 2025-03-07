@@ -40,7 +40,7 @@ namespace noctern {
         assert(source.id(*pos) == token_id::lbrace);
         ++pos;
 
-        while (source.id(*pos) == token_id::valdef_intro) {
+        while (source.id(*pos) == token_id::let) {
             ++pos;
             assert(source.id(*pos) == token_id::ident);
             const token ident = *pos;
@@ -63,7 +63,7 @@ namespace noctern {
         const tokens& source, frame& frame, tokens::const_iterator& pos) const {
         assert(frame.expr_stack.empty());
 
-        while (source.id(*pos) != token_id::statement_end) {
+        while (source.id(*pos) != token_id::semicolon) {
             token next = *pos;
             token_id id = source.id(next);
             ++pos;

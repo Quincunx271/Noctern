@@ -125,7 +125,7 @@ namespace noctern {
             assert(source.id(*pos) == token_id::lbrace);
             ++pos;
 
-            while (source.id(*pos) == token_id::valdef_intro) {
+            while (source.id(*pos) == token_id::let) {
                 ++pos;
                 assert(source.id(*pos) == token_id::ident);
                 std::string_view variable_name = source.string(*pos);
@@ -158,7 +158,7 @@ namespace noctern {
                 return reg;
             };
 
-            while (source.id(*pos) != token_id::statement_end) {
+            while (source.id(*pos) != token_id::semicolon) {
                 token next = *pos;
                 token_id id = source.id(next);
                 ++pos;

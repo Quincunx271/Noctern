@@ -71,18 +71,18 @@ namespace noctern {
                 //     return y + z  + x * 2. - 2 + .1;
                 // };
                 {
-                    fn_intro,
+                    def,
                     {ident, "silly_add"},
                     {ident, "x"},
                     {ident, "y"},
                     rparen,
                     lbrace,
-                    valdef_intro,
+                    let,
                     {ident, "z"},
                     {ident, "y"},
                     {real_lit, "0.2"},
                     minus,
-                    statement_end,
+                    semicolon,
                     return_,
                     {ident, "y"},
                     {ident, "z"},
@@ -95,9 +95,9 @@ namespace noctern {
                     minus,
                     {real_lit, ".1"},
                     plus,
-                    statement_end,
+                    semicolon,
                     rbrace,
-                    statement_end,
+                    semicolon,
                 });
 
             noctern::compilation_unit cu(tokens.tokens);
